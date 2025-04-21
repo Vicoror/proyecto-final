@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "./styles/globals.css";
+import { Alex_Brush } from "next/font/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+const alexBrush = Alex_Brush({
+  subsets: ["latin"],
+  weight: "400", // Alex Brush solo tiene este peso disponible
 });
 
 const geistMono = Geist_Mono({
