@@ -8,11 +8,11 @@ export async function POST(req) {
 
     // Conectar a la base de datos
     db = await mysql.createConnection({
-      host: "localhost",
+      host: "ballast.proxy.rlwy.net",
       user: "root",
-      password: "12345678",
+      password: "UjoNIhdtAkcSYSzZBeNQKPejgbKulsyb",
       database: "mi_proyecto_final",
-      port: 3306,
+      port: 11561,
     });
 
     // Buscar usuario en la base de datos, incluyendo su rol
