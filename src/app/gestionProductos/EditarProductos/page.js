@@ -311,7 +311,7 @@ export default function EditarProducto() {
                     </div>
 
                     <div>
-                      <label className="block text-[#7B2710] font-semibold mb-2">Precio (USD)</label>
+                      <label className="block text-[#7B2710] font-semibold mb-2">Precio ($)</label>
                       <input
                         type="number"
                         name="price"
