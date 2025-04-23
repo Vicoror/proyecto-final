@@ -34,7 +34,7 @@ export default function AgregarProductoPage() {
 
     // Campo Nombre: limpia caracteres especiales, máximo 40 caracteres
     } else if (name === "name") {
-      const trimmed = value.replace(/[^\w()]/g," ").slice(0, 40);
+      const trimmed = value.replace(/[^\w()]/g," ").slice(0, 50);
       setProductData({ ...productData, name: trimmed });
 
     // Campo Precio: acepta solo números y punto decimal, con validación en tiempo real
@@ -203,9 +203,9 @@ export default function AgregarProductoPage() {
                     onChange={handleInputChange}
                     className="w-full p-2 border border-[#8C9560] rounded-md"
                     required
-                    maxLength={40}
+                    maxLength={50}
                   />
-                  <p className="text-sm text-gray-600 mt-1">{productData.name.length}/40 caracteres</p>
+                  <p className="text-sm text-gray-600 mt-1">{productData.name.length}/50 caracteres</p>
                 </div>
 
                 {/* Campo Precio */}
@@ -295,6 +295,7 @@ export default function AgregarProductoPage() {
                   </button>
                   <button
                     type="submit"
+                    onClick={() => router.push("/Admin")}
                     className="bg-[#8C9560] text-[#F5F1F1] py-2 px-4 rounded-md font-semibold hover:bg-[#DC9C5C] transition-all"
                   >
                     Guardar Producto
