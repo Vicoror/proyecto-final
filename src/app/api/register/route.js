@@ -7,11 +7,11 @@ export async function POST(req) {
 
     // Conectar a la base de datos
     const db = await mysql.createConnection({
-      host: "localhost",
+      host: "ballast.proxy.rlwy.net",
       user: "root",
-      password: "12345678",
+      password: "UjoNIhdtAkcSYSzZBeNQKPejgbKulsyb",
       database: "mi_proyecto_final",
-      port: 3306, // Asegúrate de que MySQL esté en este puerto
+      port: 11561,
     });
 
     // Verificar si el correo ya está registrado
