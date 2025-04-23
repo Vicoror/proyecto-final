@@ -47,13 +47,6 @@ export default function AgregarProducto() {
         cleanValue = intPart + "." + decPart.slice(0, 2);
       }
 
-      // Limitar entre 20 y 5000
-      const numericValue = parseFloat(cleanValue);
-      if (!isNaN(numericValue)) {
-        if (numericValue < 20) cleanValue = "20";
-        if (numericValue > 5000) cleanValue = "5000";
-      }
-
       setProductData({ ...productData, price: cleanValue });
 
     // Campo Descripción: limitar a 300 caracteres
@@ -80,13 +73,28 @@ export default function AgregarProducto() {
     }
   };
 
+  // Función para ajustar el precio cuando pierde el foco
+  const handlePriceBlur = () => {
+    const numericValue = parseFloat(productData.price);
+    if (!isNaN(numericValue)) {
+      let adjustedValue = numericValue;
+      if (numericValue < 20) adjustedValue = 20;
+      if (numericValue > 5000) adjustedValue = 5000;
+      
+      setProductData({ ...productData, price: adjustedValue.toString() });
+    } else {
+      // Si no es un número válido, establecer el valor mínimo
+      setProductData({ ...productData, price: "20" });
+    }
+  };
+
   // Función que maneja el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validaciones antes de enviar
-    const priceNum = parseFloat(productData.price);
-    if (priceNum < 20 || priceNum > 5000) {
+    // Aplicar validación de precio antes de enviar
+    const numericValue = parseFloat(productData.price);
+    if (isNaN(numericValue) || numericValue < 20 || numericValue > 5000) {
       alert("El precio debe estar entre $20 y $5000.");
       return;
     }
@@ -195,7 +203,7 @@ export default function AgregarProducto() {
                     onChange={handleInputChange}
                     className="w-full p-2 border border-[#8C9560] rounded-md"
                     required
-                    maxLength={30}
+                    maxLength={40}
                   />
                   <p className="text-sm text-gray-600 mt-1">{productData.name.length}/40 caracteres</p>
                 </div>
@@ -208,6 +216,7 @@ export default function AgregarProducto() {
                     name="price"
                     value={productData.price}
                     onChange={handleInputChange}
+                    onBlur={handlePriceBlur}
                     className="w-full p-2 border border-[#8C9560] rounded-md"
                     required
                     placeholder="Ej. 100.00 min 20.00 max 5000"
@@ -299,5 +308,3 @@ export default function AgregarProducto() {
     </div>
   );
 }
-
-
