@@ -165,7 +165,8 @@ export default function NavegadorAdmin() {
           </div>
         </div>
 
-        <div className="hidden lg:flex gap-2">
+        <div className={`flex gap-2 ${isMobileMenuOpen ? "flex flex-col mt-4" : "hidden"} lg:flex lg:flex-row lg:mt-0`}>
+
           <button
             onClick={goToClientMenu}
             className="bg-gradient-to-r from-[#9FBF69] to-[#7D8D4E] text-white py-2 px-4 rounded-lg font-bold shadow hover:brightness-110 transition-all text-sm sm:text-base"
