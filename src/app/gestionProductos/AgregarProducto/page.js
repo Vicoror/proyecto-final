@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
 
 // Componente principal de la página para agregar productos
-export default function AgregarProducto() {
+export default function AgregarProductoPage() {
   // Estado para almacenar los datos del producto
   const [productData, setProductData] = useState({
     id: "",
