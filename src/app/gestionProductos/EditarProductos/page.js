@@ -22,13 +22,12 @@ export default function EditarProducto() {
   const router = useRouter();
 
   // Validaciones
-  const validateId = (id) => /^[a-zA-Z0-9_]{1,20}$/.test(id);
-  const validateName = (name) => /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]{1,40}$/.test(name);
+  const validateId = (id) => /^[a-zA-Z0-9_]{1,15}$/.test(id);
+  const validateName = (name) => /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]{1,50}$/.test(name);
   const validatePrice = (price) => price >= 20 && price <= 5000;
   const validateDescription = (desc) => {
-    const wordCount = desc.trim().split(/\s+/).length;
     const charCount = desc.length;
-    return wordCount <= 300 && charCount <= 2100 && /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ.,?!]*$/.test(desc);
+    return charCount <= 300 && /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ.,?!]*$/.test(desc);
   };
 
   const handleSearch = async () => {
@@ -43,10 +42,7 @@ export default function EditarProducto() {
     setSearchResults([]);
 
     try {
-      const response = await fetch(
-        `/api/productos?search=${encodeURIComponent(searchTerm)}&type=${selectedInterface}`
-      );
-
+      const response = await fetch(`/api/productos?search=${encodeURIComponent(searchTerm)}&type=${selectedInterface}`);
       if (!response.ok) throw new Error("Error al buscar productos");
 
       const data = await response.json();
@@ -56,7 +52,6 @@ export default function EditarProducto() {
         throw new Error("No se encontraron productos");
       }
 
-      // Normalizar estructura de productos
       const normalizedResults = results.map(item => ({
         id: item.id || item.id_productos || item.id_productosPerso || "",
         name: item.nombre || item.name || item.nombrePerso || "",
@@ -68,7 +63,6 @@ export default function EditarProducto() {
 
       setSearchResults(normalizedResults);
       setSuccess(`Encontrados: ${normalizedResults.length} productos`);
-
     } catch (error) {
       setError(error.message);
     } finally {
@@ -92,11 +86,45 @@ export default function EditarProducto() {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
+  
+    if (name === "image") {
+      if (files[0]) {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width > 1500 || img.height > 1500) {
+            setError("La imagen debe ser menor a 1500x1500 píxeles");
+            return;
+          }
+          setProductData({ ...productData, image: files[0] });
+        };
+        img.src = URL.createObjectURL(files[0]);
+      }
+      return;
+    }
 
-    if (name === "id" && !validateId(value)) return;
-    if (name === "name" && !validateName(value)) return;
-    if (name === "price" && (isNaN(value) || !validatePrice(Number(value)))) return;
-    if (name === "description" && !validateDescription(value)) return;
+    if (name === "id" && value.length <= 20) {
+      setProductData({ ...productData, id: value });
+      return;
+    }
+  
+    if (name === "name" && value.length <= 50) {
+      setProductData({ ...productData, name: value });
+      return;
+    }
+
+    if (name === "price") {
+      if (value.length <= 6 && /^[0-9]*$/.test(value)) {
+        setProductData({ ...productData, price: value });
+      }
+      return;
+    }
+
+    if (name === "description") {
+      if (value.length <= 300 && validateDescription(value)) {
+        setProductData({ ...productData, description: value });
+      }
+      return;
+    }
 
     if (name === "image") {
       if (files[0]) {
@@ -106,43 +134,46 @@ export default function EditarProducto() {
             setError("La imagen debe ser menor a 1500x1500 píxeles");
             return;
           }
-          setProductData({...productData, image: files[0]});
+          setProductData({ ...productData, image: files[0] });
         };
         img.src = URL.createObjectURL(files[0]);
       }
     } else {
-      setProductData({...productData, [name]: value});
+      setProductData({ ...productData, [name]: value });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validaciones finales
     if (!validateId(productData.id)) {
       setError("ID inválido: Solo letras, números y _ (máx. 20 caracteres)");
       return;
     }
     if (!validateName(productData.name)) {
-      setError("Nombre inválido (máx. 40 caracteres)");
+      setError("Nombre inválido (máx. 50 caracteres)");
       return;
     }
-    if (!validatePrice(Number(productData.price))) {
-      setError("Precio debe estar entre $20 y $5000");
+    const parsedPrice = Number(productData.price);
+    if (
+      isNaN(parsedPrice) ||
+      !validatePrice(parsedPrice) ||
+      productData.price.length > 4
+    ) {
+      setError("Precio inválido: debe ser un número de máximo 4 cifras entre $20 y $5000");
       return;
     }
     if (selectedInterface === "principal" && !validateDescription(productData.description)) {
-      setError("Descripción inválida: Máx. 300 palabras y solo signos básicos");
+      setError("Descripción inválida: Máx. 300 caracteres y signos básicos");
       return;
     }
 
     const formData = new FormData();
     formData.append('id', productData.id);
     formData.append('name', productData.name);
-    formData.append('price', productData.price);
+    formData.append('price', parsedPrice.toString());
     formData.append('category', productData.category);
     formData.append('active', productData.active.toString());
-    
     if (productData.image) formData.append('image', productData.image);
     if (selectedInterface === "principal") formData.append('description', productData.description);
 
@@ -158,7 +189,7 @@ export default function EditarProducto() {
       }
 
       alert("Producto actualizado exitosamente");
-      router.push("/admin");
+      router.push("/Admin");
     } catch (error) {
       setError(error.message);
     }
@@ -305,9 +336,9 @@ export default function EditarProducto() {
                         onChange={handleInputChange}
                         className="w-full p-2 border border-[#8C9560] rounded-md"
                         required
-                        maxLength={40}
+                        maxLength={50}
                       />
-                      <p className="text-sm text-gray-600 mt-1">Máximo 40 caracteres</p>
+                      <p className="text-sm text-gray-600 mt-1">Máximo 50 caracteres</p>
                     </div>
 
                     <div>
@@ -364,9 +395,9 @@ export default function EditarProducto() {
                         className="w-full p-2 border border-[#8C9560] rounded-md"
                         rows={4}
                         required
-                        maxLength={2100}
+                        maxLength={300}
                       />
-                      <p className="text-sm text-gray-600 mt-1">Máximo 300 palabras (2100 caracteres)</p>
+                      <p className="text-sm text-gray-600 mt-1">Máximo 300 palabras (300 caracteres)</p>
                     </div>
                   )}
 
