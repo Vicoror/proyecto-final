@@ -1,6 +1,6 @@
 "use client"; // Indica que este componente debe ejecutarse del lado del cliente (no en servidor)
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
 
@@ -16,6 +16,13 @@ export default function AgregarProductoPage() {
     image: null,
     active: true
   });
+
+    useEffect(() => {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        router.replace("/login");
+      }
+    }, []);
 
   // Estado para saber qué interfaz (sección) fue seleccionada
   const [selectedInterface, setSelectedInterface] = useState("");

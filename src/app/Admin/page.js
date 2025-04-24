@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
 
+
 export default function AdminMenuPage() {
   const router = useRouter();
 

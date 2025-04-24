@@ -12,6 +12,14 @@ export default function GestionStock() {
   const [alertas, setAlertas] = useState([]);
   const [nuevoStock, setNuevoStock] = useState({});
 
+  // Protección de ruta
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      router.replace("/login");
+    }
+  }, []);
+
   useEffect(() => {
     const fetchProductosConStock = async () => {
       try {

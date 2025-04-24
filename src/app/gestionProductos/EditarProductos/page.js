@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
 
@@ -13,6 +13,12 @@ export default function EditarProducto() {
     image: null,
     active: true
   });
+    useEffect(() => {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        router.replace("/login");
+      }
+    }, []);
   const [selectedInterface, setSelectedInterface] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);

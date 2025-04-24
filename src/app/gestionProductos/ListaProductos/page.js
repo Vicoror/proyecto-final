@@ -11,6 +11,14 @@ export default function ListaProductos() {
   const [error, setError] = useState(null);
   const router = useRouter();
 
+  // Protección de ruta
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      router.replace("/login");
+    }
+  }, []);
+
   useEffect(() => {
     const fetchProductos = async () => {
       try {
