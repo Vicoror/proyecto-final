@@ -125,6 +125,15 @@ export default function EditarProducto() {
       }
       return;
     }
+    if (productData.name.length < 15) {
+      alert("El nombre debe tener al menos 15 caracteres.");
+      return;
+    }
+   
+    if (productData.description.length < 30) {
+      alert("La descripción debe tener al menos 30 caracteres.");
+      return;
+    }
 
     if (name === "image") {
       if (files[0]) {

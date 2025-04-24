@@ -103,6 +103,14 @@ export default function AgregarProductoPage() {
       alert("El nombre debe tener al menos 15 caracteres.");
       return;
     }
+    if (productData.id.length < 10) {
+      alert("El id debe tener al menos 10 caracteres.");
+      return;
+    }
+    if (productData.description.length < 30) {
+      alert("La descripción debe tener al menos 30 caracteres.");
+      return;
+    }
 
     // Construir FormData para enviar datos, incluyendo imagen
     const formData = new FormData();
@@ -131,7 +139,7 @@ export default function AgregarProductoPage() {
       }
 
       alert("Producto guardado exitosamente");
-      router.push("/"); // Redirigir a inicio (puedes cambiarlo si quieres ir a /Admin)
+      router.push("/Admin"); // Redirigir a inicio (puedes cambiarlo si quieres ir a /Admin)
 
     } catch (error) {
       console.error("Error detallado:", error);
@@ -295,7 +303,6 @@ export default function AgregarProductoPage() {
                   </button>
                   <button
                     type="submit"
-                    onClick={() => router.push("/Admin")}
                     className="bg-[#8C9560] text-[#F5F1F1] py-2 px-4 rounded-md font-semibold hover:bg-[#DC9C5C] transition-all"
                   >
                     Guardar Producto
