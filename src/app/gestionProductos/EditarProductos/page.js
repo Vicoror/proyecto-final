@@ -133,13 +133,17 @@ const validateDescription = (desc) => {
       return;
     }
     
-    if (name === "id" && value.length <= 20) {
-      setProductData({ ...productData, id: value });
+    if (name === "id") {
+      const cleaned = value.replace(/[^\w]/g, "").slice(0, 20); // \w incluye letras, números y _
+      setProductData({ ...productData, id: cleaned });
       return;
     }
   
-    if (name === "name" && value.length <= 50) {
-      setProductData({ ...productData, name: value });
+    if (name === "name") {
+      const cleaned = value
+        .replace(/[^a-zA-Z0-9ñÑáéíóúÁÉÍÓÚ_%\s]/g, "")
+        .slice(0, 50);
+      setProductData({ ...productData, name: cleaned });
       return;
     }
 

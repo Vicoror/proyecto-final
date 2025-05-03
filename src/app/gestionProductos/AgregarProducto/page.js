@@ -96,22 +96,9 @@ export default function AgregarProductoPage() {
     }
   };
 
-  
-
-  // Función para ajustar el precio cuando pierde el foco
-  const handlePriceBlur = () => {
-    const numericValue = parseFloat(productData.price);
-    if (!isNaN(numericValue)) {
-      let adjustedValue = numericValue;
-      if (numericValue < 20) adjustedValue = 20;
-      if (numericValue > 5000) adjustedValue = 5000;
-      
-      setProductData({ ...productData, price: adjustedValue.toString() });
-    } else {
-      // Si no es un número válido, establecer el valor mínimo
-      setProductData({ ...productData, price: "20" });
-    }
-  };
+const handlePriceBlur = () => {
+  // Solo validación visual opcional o dejar vacío
+};
 
   // Función que maneja el envío del formulario
   const handleSubmit = async (e) => {
