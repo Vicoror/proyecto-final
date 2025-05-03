@@ -168,12 +168,32 @@ export async function PUT(request) {
     };
 
     if (image && image.size > 0) {
+      // Validación de tipo de archivo (solo imágenes)
+      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      const validExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
+      
+      const fileExtension = image.name.split(".").pop().toLowerCase();
+      
+      if (!validTypes.includes(image.type) || !validExtensions.includes(fileExtension)) {
+        return Response.json({ message: "Archivo de imagen no válido. Solo se permiten imágenes JPG, PNG, WebP y GIF." }, { status: 400 });
+      }
+    
+      // Validación de tamaño de archivo (máximo 2MB en este ejemplo)
+      if (image.size > 2 * 1024 * 1024) {
+        return Response.json({ message: "La imagen es demasiado grande. El tamaño máximo es 2MB." }, { status: 400 });
+      }
+    
+      // Si pasa la validación, subimos la imagen
       const buffer = await image.arrayBuffer();
       const base64Image = Buffer.from(buffer).toString('base64');
       const dataUrl = `data:${image.type};base64,${base64Image}`;
+    
       const result = await cloudinary.uploader.upload(dataUrl);
       updateFields.imagen = result.secure_url;
+    } else {
+      return Response.json({ message: "Este formato de imagen no es válido." }, { status: 400 });
     }
+    
 
     if (type === 'principal' && description) {
       updateFields.descripcion = description;

@@ -28,13 +28,20 @@ export default function EditarProducto() {
   const router = useRouter();
 
   // Validaciones
-  const validateId = (id) => /^[a-zA-Z0-9_]{1,15}$/.test(id);
-  const validateName = (name) => /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]{1,50}$/.test(name);
-  const validatePrice = (price) => price >= 20 && price <= 5000;
-  const validateDescription = (desc) => {
-    const charCount = desc.length;
-    return charCount <= 300 && /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ.,?!]*$/.test(desc);
-  };
+const validateId = (id) => /^[a-zA-Z0-9_]{1,20}$/.test(id);
+
+const validateName = (name) => /^[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ\s]{15,50}$/.test(name);
+
+const validatePrice = (price) => price >= 20 && price <= 5000;
+
+const validateDescription = (desc) => {
+  const charCount = desc.length;
+  return (
+    charCount <= 300 &&
+    /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑüÜ.,:;!?'"()\-]*$/.test(desc)
+  );
+};
+
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -94,20 +101,38 @@ export default function EditarProducto() {
     const { name, value, files } = e.target;
   
     if (name === "image") {
-      if (files[0]) {
+      const file = files[0];
+      if (!file) return;
+    
+      const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+      const fileExtension = file.name.split(".").pop().toLowerCase();
+    
+      // Verifica que el type sea de imagen y que la extensión coincida
+      if (!file.type.startsWith("image/") || !validExtensions.includes(fileExtension)) {
+        setError("Solo se permiten archivos de imagen válidos (.jpg, .jpeg, .png, .gif, .webp)");
+        return;
+      }
+    
+      // Segunda validación: intenta cargar la imagen para verificar que es válida
+      const reader = new FileReader();
+      reader.onload = function (e) {
         const img = new Image();
         img.onload = () => {
           if (img.width > 1500 || img.height > 1500) {
             setError("La imagen debe ser menor a 1500x1500 píxeles");
             return;
           }
-          setProductData({ ...productData, image: files[0] });
+          setProductData({ ...productData, image: file });
         };
-        img.src = URL.createObjectURL(files[0]);
-      }
+        img.onerror = () => {
+          setError("El archivo no es una imagen válida.");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
       return;
     }
-
+    
     if (name === "id" && value.length <= 20) {
       setProductData({ ...productData, id: value });
       return;
@@ -129,15 +154,6 @@ export default function EditarProducto() {
       if (value.length <= 300 && validateDescription(value)) {
         setProductData({ ...productData, description: value });
       }
-      return;
-    }
-    if (productData.name.length < 15) {
-      alert("El nombre debe tener al menos 15 caracteres.");
-      return;
-    }
-   
-    if (productData.description.length < 30) {
-      alert("La descripción debe tener al menos 30 caracteres.");
       return;
     }
 
@@ -169,11 +185,12 @@ export default function EditarProducto() {
       setError("Nombre inválido (máx. 50 caracteres)");
       return;
     }
+    
     const parsedPrice = Number(productData.price);
     if (
       isNaN(parsedPrice) ||
       !validatePrice(parsedPrice) ||
-      productData.price.length > 4
+      productData.price.length > 6
     ) {
       setError("Precio inválido: debe ser un número de máximo 4 cifras entre $20 y $5000");
       return;
@@ -182,7 +199,15 @@ export default function EditarProducto() {
       setError("Descripción inválida: Máx. 300 caracteres y signos básicos");
       return;
     }
-
+    if (productData.name.length < 15) {
+      setError("El nombre debe tener al menos 15 caracteres.");
+      return;
+    }
+    
+    if (selectedInterface === "principal" && productData.description.length < 30) {
+      setError("La descripción debe tener al menos 30 caracteres.");
+      return;
+    }
     const formData = new FormData();
     formData.append('id', productData.id);
     formData.append('name', productData.name);

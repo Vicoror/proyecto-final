@@ -41,44 +41,62 @@ export default function AgregarProductoPage() {
 
     // Campo Nombre: limpia caracteres especiales, máximo 40 caracteres
     } else if (name === "name") {
-      const trimmed = value.replace(/[^\w()]/g," ").slice(0, 50);
-      setProductData({ ...productData, name: trimmed });
+      const cleaned = value.replace(/[^\wñÑáéíóúÁÉÍÓÚ()% ]/g, "").slice(0, 50);
+      setProductData({ ...productData, name: cleaned });
 
     // Campo Precio: acepta solo números y punto decimal, con validación en tiempo real
     } else if (name === "price") {
       let cleanValue = value.replace(/[^\d.]/g, "");
-
+    
       // Permitir máximo dos decimales
       if (cleanValue.includes(".")) {
         const [intPart, decPart] = cleanValue.split(".");
         cleanValue = intPart + "." + decPart.slice(0, 2);
       }
-
+    
+      // Limitar el total de caracteres a 6
+      cleanValue = cleanValue.slice(0, 6);
+    
       setProductData({ ...productData, price: cleanValue });
 
     // Campo Descripción: limitar a 300 caracteres
     } else if (name === "description") {
-      const trimmedDesc = value.slice(0, 300);
-      setProductData({ ...productData, description: trimmedDesc });
+      const cleanedDesc = value
+      .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,;:¿?¡!_%\s]/g, "")
+      .slice(0, 300);
+      setProductData({ ...productData, description: cleanedDesc });
 
-    // Campo Imagen: validar que la imagen no supere los 1500x1500 px
-    } else if (name === "image") {
-      const file = files[0];
-      const img = new Image();
-      img.onload = () => {
-        if (img.width > 1500 || img.height > 1500) {
-          alert("La imagen no debe superar los 1500x1500 px.");
-        } else {
-          setProductData({ ...productData, image: file });
-        }
-      };
-      img.src = URL.createObjectURL(file);
+      // Campo Imagen: validar que sea imagen y no supere los 1500x1500 px
+} else if (name === "image") {
+  const file = files[0];
+
+  if (!file.type.startsWith("image/")) {
+    alert("El archivo debe ser una imagen (formatos permitidos: JPG, PNG, etc.).");
+    return;
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    if (img.width > 1500 || img.height > 1500) {
+      alert("La imagen no debe superar los 1500x1500 px.");
+    } else {
+      setProductData({ ...productData, image: file });
+    }
+  };
+  img.onerror = () => {
+    alert("El archivo seleccionado no es una imagen válida.");
+  };
+
+  img.src = URL.createObjectURL(file);
+
 
     // Para los demás campos (como categoría)
     } else {
       setProductData({ ...productData, [name]: value });
     }
   };
+
+  
 
   // Función para ajustar el precio cuando pierde el foco
   const handlePriceBlur = () => {
