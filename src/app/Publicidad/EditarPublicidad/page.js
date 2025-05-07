@@ -1,9 +1,18 @@
 "use client";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
+import { useEffect } from "react";
 
 export default function PaginaBase() {
   const router = useRouter();
+
+  // Protección de ruta
+    useEffect(() => {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        router.replace("/login");
+      }
+    }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative" style={{ backgroundImage: "url('/fondo.png')" }}>

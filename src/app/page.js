@@ -61,7 +61,7 @@ const truncateText = (text, maxLength) => {
 
 export default function Home() {
   const [anuncios, setAnuncios] = useState([]);
-  const [anuncioIndex, setAnuncioIndex] = useState(0);
+  const [anuncioIndex, setAnuncioIndex] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
   const [isButtonGlowing, setIsButtonGlowing] = useState(false);
@@ -75,6 +75,18 @@ export default function Home() {
       } catch (error) {
         console.error("Error cargando anuncios", error);
       }
+    };
+  
+    fetchAnuncios();
+  }, []);
+  
+  useEffect(() => {
+    const fetchAnuncios = async () => {
+      const res = await fetch("/api/anuncios");
+      const data = await res.json();
+      // Solo anuncios activos
+      const activos = data.filter((a) => a.activo);
+      setAnuncios(activos);
     };
   
     fetchAnuncios();
@@ -167,7 +179,7 @@ export default function Home() {
         animate={{ opacity: [0, 1], x: [-50, 0] }}
         transition={{ duration: 0.5 }}
       >
-        {anuncios[anuncioIndex]}
+        {anuncios[anuncioIndex]?.titulo}
       </motion.div>
 
       {/* Encabezado */}
