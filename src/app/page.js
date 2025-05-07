@@ -5,21 +5,25 @@ import { FiUser, FiShoppingCart, FiMenu, FiX, FiArrowRight } from "react-icons/f
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-
-const anuncios = [
-  "Envíos gratis en compras mayores a $1000",
-  "Personaliza tu artesanía con nosotros",
-  "Descubre nuestra colección única"
-];
+import Presentacion from "@/components/Presentacion";
 
 const categorias = ["Anillos", "Collares", "Aretes", "Pulseras", "Brazaletes", "Piedras"];
 
 // Nuevas imágenes de presentación
-const imagenesPresentacion = [
-  "/pesentacion1.jpg",
-  "/presentacion2.png",
-  "/presentacion3.jpg"
-];
+const imagenesPresentacion = {
+  carrusel: [
+    "/img1.jpg",
+    "/img2.jpg",
+    "/img3.jpg",
+    "/img4.jpg",
+    "/img5.jpg",
+  ],
+  seccionMedia: {
+    tipo: "video", // o "imagen"
+    src: "/video.mp4" // o "/imagenMedia.jpg"
+  },
+  imagenFinal: "/imgFinal.jpg"
+};
 
 const productos = {
   Anillos: [
@@ -56,10 +60,25 @@ const truncateText = (text, maxLength) => {
 
 
 export default function Home() {
+  const [anuncios, setAnuncios] = useState([]);
   const [anuncioIndex, setAnuncioIndex] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
   const [isButtonGlowing, setIsButtonGlowing] = useState(false);
+
+  useEffect(() => {
+    const fetchAnuncios = async () => {
+      try {
+        const res = await fetch('/api/anuncios');
+        const data = await res.json();
+        setAnuncios(data);
+      } catch (error) {
+        console.error("Error cargando anuncios", error);
+      }
+    };
+  
+    fetchAnuncios();
+  }, []);
 
   const [productosDinamicos, setProductosDinamicos] = useState(null);
    // Nuevo efecto para cargar productos dinámicos
@@ -108,11 +127,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (anuncios.length === 0) return; // Evitar si no hay anuncios aún
+  
     const interval = setInterval(() => {
       setAnuncioIndex((prevIndex) => (prevIndex + 1) % anuncios.length);
     }, 3000);
+  
     return () => clearInterval(interval);
-  }, []);
+  }, [anuncios]); 
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -208,30 +230,10 @@ export default function Home() {
         </motion.nav>
       )}
 
+      <Presentacion />
+
       {/* Nueva sección de presentación */}
       <section className="mt-8 px-4 md:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {imagenesPresentacion.map((imagen, index) => (
-            <motion.div 
-              key={index}
-              className="relative overflow-hidden rounded-lg shadow-lg h-64 md:h-80"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <img 
-                src={imagen} 
-                alt={`Presentación ${index + 1}`} 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                <h3 className="text-white text-xl font-regular" style={{ fontFamily: "Alex Brush"}}>
-                  {index === 0 ? "Colección Exclusiva" : 
-                   index === 1 ? "Artesanía Tradicional" : "Diseños Modernos"}
-                </h3>
-              </div>
-            </motion.div>
-          ))}
-        </div>
 
         {/* Botón de personalización */}
         <div className="text-center my-10">

@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 
 const menuItems = [
   { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Lista de productos", "Stock"] },
-  { title: "Publicidad", submenu: ["Agregar Publicidad", "Editar Publicidad"] },
+  { title: "Publicidad", submenu: ["Editar Anuncios", "Editar Publicidad"] },
   { title: "Pedidos", submenu: ["Editar status de pedidos"] },
   { title: "Gestión de clientes", submenu: ["Datos de clientes", "Editar clientes"] },
   { title: "Reportes", submenu: ["Reportes", "Métricas", "Ventas", "Chat"] },
@@ -38,7 +38,7 @@ export default function NavegadorAdmin() {
       "Editar productos": "/gestionProductos/EditarProductos",
       "Lista de productos": "/gestionProductos/ListaProductos",
       "Stock": "/gestionProductos/Stock",
-      "Agregar Publicidad": "/Publicidad/agregarPublicidad",
+      "Editar Anuncios": "/Publicidad/EditarAnuncios",
       "Editar Publicidad": "/Publicidad/EditarPublicidad",
       "Editar status de pedidos": "/Pedidos",
       "Datos de clientes": "/gestionClientes/DatosClientes",
