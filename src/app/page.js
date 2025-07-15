@@ -60,18 +60,21 @@ export default function Home() {
   }, []);
 
     useEffect(() => {
-    const obtenerPublicidad = async () => {
-      try {
-        const res = await fetch("/api/publicidad");
-        const data = await res.json();
-        setItems(data);
-      } catch (err) {
-        console.error("Error al obtener publicidad", err);
-      }
-    };
-    obtenerPublicidad();
-  }, []);
-  
+      const obtenerPublicidad = async () => {
+        try {
+          const res = await fetch("/api/publicidad");
+
+          const texto = await res.text(); // 🔍 primero obtenemos el texto crudo
+          console.log("🧾 Respuesta cruda:", texto);
+
+          const data = JSON.parse(texto); // intentamos convertirlo manualmente
+          setItems(data);
+        } catch (err) {
+          console.error("❌ Error al obtener publicidad:", err);
+        }
+      };
+      obtenerPublicidad();
+    }, []);
 
   useEffect(() => {
     const cargarProductos = async () => {
