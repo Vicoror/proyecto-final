@@ -1,19 +1,29 @@
 'use client'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Captcha from '@/components/Captcha' // Importa tu componente Captcha
 
 export default function RecuperarContrasena() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState(null) // Estado para token captcha
   const router = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess('')
+
+    // Validar que el captcha esté completado
+    if (!captchaToken) {
+      setError('Por favor completa el CAPTCHA antes de continuar.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -22,8 +32,8 @@ export default function RecuperarContrasena() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
-        cache: 'no-store'
+        body: JSON.stringify({ email, captchaToken }), // Enviar token captcha al backend
+        cache: 'no-store',
       })
 
       const data = await response.json()
@@ -34,6 +44,7 @@ export default function RecuperarContrasena() {
 
       setSuccess(data.message)
       setEmail('')
+      setCaptchaToken(null) // Resetear captcha luego de éxito
     } catch (err) {
       setError(err.message || 'Ocurrió un error al enviar la solicitud')
     } finally {
@@ -42,16 +53,19 @@ export default function RecuperarContrasena() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-8" style={{ backgroundImage: "url('/fondo.png')" }}>
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-8"
+      style={{ backgroundImage: "url('/fondo.png')" }}
+    >
       <div className="bg-[#F5F1F1] p-6 md:p-8 rounded-2xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md border-4 border-[#762114] text-center">
         <h2 className="text-lg md:text-xl font-serif text-[#8C9560] mt-2">Recuperar Contraseña</h2>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
             <p>{error}</p>
           </div>
         )}
-        
+
         {success && (
           <div className="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700">
             <p>{success}</p>
@@ -60,7 +74,10 @@ export default function RecuperarContrasena() {
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[#7B2710] mb-1 text-left">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[#7B2710] mb-1 text-left"
+            >
               Correo electrónico
             </label>
             <input
@@ -74,7 +91,10 @@ export default function RecuperarContrasena() {
               disabled={isSubmitting}
             />
           </div>
-          
+
+          {/* Aquí agregamos el componente CAPTCHA */}
+          <Captcha onVerify={(token) => setCaptchaToken(token)} />
+
           <button
             type="submit"
             className={`w-full py-2 px-4 rounded-md font-serif font-bold transition-colors duration-300 ${
@@ -89,11 +109,17 @@ export default function RecuperarContrasena() {
         </form>
 
         <div className="mt-6 text-center">
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="text-sm text-[#7B2710] font-serif hover:underline inline-flex items-center"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Volver al inicio de sesión

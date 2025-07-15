@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
+import { ArrowLeft} from "lucide-react";
 
 export default function EditarAnunciosBase() {
   const [anuncios, setAnuncios] = useState([ { id: null, titulo: "", activo: true }, { id: null, titulo: "", activo: true }, { id: null, titulo: "", activo: true } ]);
@@ -95,7 +96,7 @@ export default function EditarAnunciosBase() {
   const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // Asegúrate de que los anuncios tengan un título válido y 'activo' como booleano
+  // Se asegura que los anuncios tengan un título válido y 'activo' como booleano
   const anunciosConValores = anuncios.map((anuncio) => ({
     ...anuncio,
     titulo: anuncio.titulo || "",  // Si el título está vacío, lo reemplaza por una cadena vacía
@@ -125,11 +126,20 @@ export default function EditarAnunciosBase() {
 
   
 return (
-  <div className="min-h-screen flex flex-col items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative" style={{ backgroundImage: "url('/fondo.png')" }}>
+  <div className="min-h-screen flex flex-col items-center bg-cover bg-center bg-no-repeat p-4 sm:p-2 relative" style={{ backgroundImage: "url('/fondo.png')" }}>
     <div className="absolute inset-0 bg-black opacity-40"></div>
     <NavegadorAdmin />
 
-    <div className="top-10 relative z-10 w-full max-w-6xl mt-8">
+    <div className="relative z-10 px-2 sm:px-0 pt-17 pb-10 w-full max-w-[1500px] mx-auto">
+       <div className="w-full max-w-[99.5vw] max-w-5xl mx-auto mb-4">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center text-white hover:text-[#F5F1F1] transition-colors"
+          >
+            <ArrowLeft className="mr-2" size={30} />
+            Anterior
+          </button>
+        </div>
       <div className="bg-[#F5F1F1] p-6 rounded-lg shadow-lg border-4 border-[#762114]">
         <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Anuncios</h2>
         <form onSubmit={handleSubmit}>

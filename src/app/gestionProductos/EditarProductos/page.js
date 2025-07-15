@@ -2,6 +2,7 @@
 import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
+import { ArrowLeft} from "lucide-react";
 
 export default function EditarProducto() {
   const [productData, setProductData] = useState({
@@ -11,14 +12,11 @@ export default function EditarProducto() {
     description: "",
     category: "",
     image: null,
+    image2: null,
+    image3: null,
+    stock: 0,
     active: true
   });
-    useEffect(() => {
-      const user = localStorage.getItem("user");
-      if (!user) {
-        router.replace("/login");
-      }
-    }, []);
   const [selectedInterface, setSelectedInterface] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,21 +25,24 @@ export default function EditarProducto() {
   const [searchResults, setSearchResults] = useState([]);
   const router = useRouter();
 
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      router.replace("/login");
+    }
+  }, []);
+
   // Validaciones
-const validateId = (id) => /^[a-zA-Z0-9_]{1,20}$/.test(id);
-
-const validateName = (name) => /^[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ\s]{15,50}$/.test(name);
-
-const validatePrice = (price) => price >= 20 && price <= 5000;
-
-const validateDescription = (desc) => {
-  const charCount = desc.length;
-  return (
-    charCount <= 300 &&
-    /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑüÜ.,:;!?'"()\-]*$/.test(desc)
-  );
-};
-
+  const validateId = (id) => /^[a-zA-Z0-9_]{1,20}$/.test(id);
+  const validateName = (name) => /^[a-zA-Z0-9_ñÑáéíóúÁÉÍÓÚ\s]{15,50}$/.test(name);
+  const validatePrice = (price) => price >= 20 && price <= 5000;
+  const validateDescription = (desc) => {
+    const charCount = desc.length;
+    return (
+      charCount <= 300 &&
+      /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑüÜ.,:;!%?'"()\-]*$/.test(desc)
+    );
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -71,7 +72,8 @@ const validateDescription = (desc) => {
         price: item.precio || item.price || 0,
         description: item.descripcion || item.description || "",
         category: item.categoria || item.category || "",
-        active: item.activo !== undefined ? item.activo : true
+        active: item.activo !== undefined ? item.activo : true,
+        stock: item.stock ?? 0
       }));
 
       setSearchResults(normalizedResults);
@@ -83,37 +85,21 @@ const validateDescription = (desc) => {
     }
   };
 
-  const selectProduct = (product) => {
-    setProductData({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      description: product.description,
-      category: product.category,
-      image: null,
-      active: product.active
-    });
-    setSearchResults([]);
-    setSuccess("Producto seleccionado para edición");
-  };
-
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-  
-    if (name === "image") {
+
+    if (["image", "image2", "image3"].includes(name)) {
       const file = files[0];
       if (!file) return;
-    
+
       const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
       const fileExtension = file.name.split(".").pop().toLowerCase();
-    
-      // Verifica que el type sea de imagen y que la extensión coincida
+
       if (!file.type.startsWith("image/") || !validExtensions.includes(fileExtension)) {
         setError("Solo se permiten archivos de imagen válidos (.jpg, .jpeg, .png, .gif, .webp)");
         return;
       }
-    
-      // Segunda validación: intenta cargar la imagen para verificar que es válida
+
       const reader = new FileReader();
       reader.onload = function (e) {
         const img = new Image();
@@ -122,7 +108,7 @@ const validateDescription = (desc) => {
             setError("La imagen debe ser menor a 1500x1500 píxeles");
             return;
           }
-          setProductData({ ...productData, image: file });
+          setProductData({ ...productData, [name]: file });
         };
         img.onerror = () => {
           setError("El archivo no es una imagen válida.");
@@ -132,13 +118,13 @@ const validateDescription = (desc) => {
       reader.readAsDataURL(file);
       return;
     }
-    
+
     if (name === "id") {
-      const cleaned = value.replace(/[^\w]/g, "").slice(0, 20); // \w incluye letras, números y _
+      const cleaned = value.replace(/[^\w]/g, "").slice(0, 20);
       setProductData({ ...productData, id: cleaned });
       return;
     }
-  
+
     if (name === "name") {
       const cleaned = value
         .replace(/[^a-zA-Z0-9ñÑáéíóúÁÉÍÓÚ_%\s]/g, "")
@@ -154,6 +140,18 @@ const validateDescription = (desc) => {
       return;
     }
 
+    if (name === "stock") {
+      if (value === "") {
+        setProductData({ ...productData, stock: "" }); // permitir borrar
+      } else {
+        const intVal = parseInt(value);
+        if (!isNaN(intVal) && intVal >= 0 && intVal <= 50) {
+          setProductData({ ...productData, stock: intVal });
+        }
+      }
+      return;
+    }
+
     if (name === "description") {
       if (value.length <= 300 && validateDescription(value)) {
         setProductData({ ...productData, description: value });
@@ -161,21 +159,7 @@ const validateDescription = (desc) => {
       return;
     }
 
-    if (name === "image") {
-      if (files[0]) {
-        const img = new Image();
-        img.onload = () => {
-          if (img.width > 1500 || img.height > 1500) {
-            setError("La imagen debe ser menor a 1500x1500 píxeles");
-            return;
-          }
-          setProductData({ ...productData, image: files[0] });
-        };
-        img.src = URL.createObjectURL(files[0]);
-      }
-    } else {
-      setProductData({ ...productData, [name]: value });
-    }
+    setProductData({ ...productData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -189,7 +173,7 @@ const validateDescription = (desc) => {
       setError("Nombre inválido (máx. 50 caracteres)");
       return;
     }
-    
+
     const parsedPrice = Number(productData.price);
     if (
       isNaN(parsedPrice) ||
@@ -207,18 +191,23 @@ const validateDescription = (desc) => {
       setError("El nombre debe tener al menos 15 caracteres.");
       return;
     }
-    
+
     if (selectedInterface === "principal" && productData.description.length < 30) {
       setError("La descripción debe tener al menos 30 caracteres.");
       return;
     }
+
     const formData = new FormData();
     formData.append('id', productData.id);
     formData.append('name', productData.name);
     formData.append('price', parsedPrice.toString());
     formData.append('category', productData.category);
     formData.append('active', productData.active.toString());
+    formData.append('stock', productData.stock?.toString() ?? "0");
+
     if (productData.image) formData.append('image', productData.image);
+    if (productData.image2) formData.append('image2', productData.image2);
+    if (productData.image3) formData.append('image3', productData.image3);
     if (selectedInterface === "principal") formData.append('description', productData.description);
 
     try {
@@ -239,12 +228,32 @@ const validateDescription = (desc) => {
     }
   };
 
+  function selectProduct(product) {
+    setProductData({
+      ...product,
+      image: null,
+      image2: null,
+      image3: null
+    });
+    setError("");
+    setSuccess("");
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative" style={{ backgroundImage: "url('/fondo.png')" }}>
+    <div className="min-h-screen flex flex-col items-center bg-cover bg-center bg-no-repeat p-4 sm:p-2 relative" style={{ backgroundImage: "url('/fondo.png')" }}>
       <NavegadorAdmin />
       <div className="absolute inset-0 bg-black opacity-40"></div>
       
-      <div className="relative top-15 z-10 w-full max-w-6xl">
+      <div className="relative z-10 px-2 sm:px-0 pt-20 pb-10 w-full max-w-[1500px] mx-auto">
+        <div className="w-full max-w-[99.5vw] max-w-5xl mx-auto mb-4">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center text-white hover:text-[#F5F1F1] transition-colors"
+          >
+            <ArrowLeft className="mr-2" size={30} />
+            Anterior
+          </button>
+        </div>
         <div className="bg-[#F5F1F1] p-6 rounded-lg shadow-lg border-4 border-[#762114]">
           <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Producto</h2>
           
@@ -273,26 +282,14 @@ const validateDescription = (desc) => {
                 Página Principal
               </button>
               <button
-                type="button"
-                onClick={() => {
-                  setSelectedInterface("personalizados");
-                  setError("");
-                  setSuccess("");
-                  setSearchResults([]);
-                  setProductData({
-                    id: "",
-                    name: "",
-                    price: "",
-                    description: "",
-                    category: "",
-                    image: null,
-                    active: true
-                  });
-                }}
-                className={`py-2 px-4 rounded-md ${selectedInterface === "personalizados" ? 'bg-[#DC9C5C] text-white' : 'bg-[#8C9560] text-white'}`}
-              >
-                Productos Personalizados
-              </button>
+                  type="button"
+                  onClick={() => {
+                    router.push('/productosPersonalizados/EditarPP');
+                  }}
+                  className={`py-2 px-4 rounded-md ${selectedInterface === "personalizados" ? 'bg-[#DC9C5C] text-white' : 'bg-[#8C9560] text-white'}`}
+                >
+                  Productos Personalizados
+                </button>
             </div>
           </div>
 
@@ -456,7 +453,41 @@ const validateDescription = (desc) => {
                     />
                     <p className="text-sm text-gray-600 mt-1">Tamaño máximo: 1500x1500px</p>
                   </div>
+                    <div className="mb-4">
+        <label className="block text-[#7B2710] font-semibold mb-2">Imagen 2 (opcional)</label>
+        <input
+          type="file"
+          name="image2"
+          onChange={handleInputChange}
+          className="w-full p-2 border border-[#8C9560] rounded-md"
+          accept="image/*"
+        />
+      </div>
 
+      <div className="mb-4">
+        <label className="block text-[#7B2710] font-semibold mb-2">Imagen 3 (opcional)</label>
+        <input
+          type="file"
+          name="image3"
+          onChange={handleInputChange}
+          className="w-full p-2 border border-[#8C9560] rounded-md"
+          accept="image/*"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-[#7B2710] font-semibold mb-2">Stock</label>
+        <input
+          type="number"
+          name="stock"
+          value={productData.stock ?? ""}
+          onChange={handleInputChange}
+          className="w-full p-2 border border-[#8C9560] rounded-md"
+          min={0}
+          max={50}
+        />
+        <p className="text-sm text-gray-600 mt-1">Rango permitido: 0 a 50 unidades</p>
+      </div>
                   <div className="mb-6 flex items-center">
                     <input
                       type="checkbox"

@@ -2,15 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const menuItems = [
-  { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Lista de productos", "Stock"] },
+  { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Stock"] },
   { title: "Publicidad", submenu: ["Editar Anuncios", "Editar Publicidad"] },
   { title: "Pedidos", submenu: ["Editar status de pedidos"] },
   { title: "Gestión de clientes", submenu: ["Datos de clientes", "Editar clientes"] },
   { title: "Reportes", submenu: ["Reportes", "Métricas", "Ventas", "Chat"] },
 ];
-
 
 export default function NavegadorAdmin() {
   const [openMenu, setOpenMenu] = useState(null);
@@ -36,8 +36,7 @@ export default function NavegadorAdmin() {
     const routes = {
       "Agregar productos": "/gestionProductos/AgregarProducto",
       "Editar productos": "/gestionProductos/EditarProductos",
-      "Lista de productos": "/gestionProductos/ListaProductos",
-      "Stock": "/gestionProductos/Stock",
+      "Stock": "/gestionProductos/ListaProductos",
       "Editar Anuncios": "/Publicidad/EditarAnuncios",
       "Editar Publicidad": "/Publicidad/EditarPublicidad",
       "Editar status de pedidos": "/Pedidos",
@@ -51,6 +50,7 @@ export default function NavegadorAdmin() {
     router.push(routes[submenuItem]);
     setOpenMenu(null);
     setSubmenuHover(false);
+    setIsMobileMenuOpen(false);
   };
 
   const handleKeyDown = (e) => {
@@ -93,6 +93,12 @@ export default function NavegadorAdmin() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [focusedMainIndex, focusedSubIndex, openMenu]);
 
+  useEffect(() => {
+    if (openMenu === null && mainMenuRefs.current[focusedMainIndex]) {
+      mainMenuRefs.current[focusedMainIndex].focus();
+    }
+  }, [openMenu]);
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
   };
@@ -120,7 +126,7 @@ export default function NavegadorAdmin() {
           {isMobileMenuOpen ? <X size={30} /> : <Menu size={30} />}
         </button>
 
-        <div className={`lg:flex ${isMobileMenuOpen ? "block" : "hidden"} w-full lg:w-auto animate-fade-in`}>
+        <div className={`lg:flex ${isMobileMenuOpen ? "block" : "hidden"} w-full lg:w-auto`}>
           <div className="flex flex-col lg:flex-row gap-2 mt-3 lg:mt-0">
             {menuItems.map((item, index) => (
               <div
@@ -132,41 +138,48 @@ export default function NavegadorAdmin() {
                 <button
                   ref={(el) => (mainMenuRefs.current[index] = el)}
                   className="text-white font-semibold py-2 px-4 bg-[#762114] rounded-md hover:bg-[#DC9C5C] transition-all text-sm sm:text-base whitespace-nowrap focus:outline-none"
+                  aria-haspopup="true"
+                  aria-expanded={openMenu === index}
                 >
                   {item.title}
                 </button>
-                {openMenu === index && item.submenu.length > 0 && (
-                  <div
-                    className="absolute left-0 mt-1 bg-[#8C9560] p-2 rounded-md shadow-lg z-10 min-w-full transition-all duration-300 transform animate-slide-down"
-                    onMouseEnter={() => setSubmenuHover(true)}
-                    onMouseLeave={() => {
-                      setSubmenuHover(false);
-                      hideSubmenu();
-                    }}
-                  >
-                    {item.submenu.map((sub, subIndex) => (
-                      <p
-                      key={subIndex}
-                      ref={(el) => (subMenuRefs.current[subIndex] = el)}
-                      className={`text-[#F5F1F1] py-1 px-4 cursor-pointer text-sm sm:text-base whitespace-nowrap focus:outline-none hover:underline ${
-                        focusedSubIndex === subIndex ? "bg-[#DC9C5C] text-[#762114] rounded-md" : ""
-                      }`}
-                      tabIndex={0}
-                      onClick={() => handleSubmenuClick(sub)}
+                <AnimatePresence>
+                  {openMenu === index && item.submenu.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 mt-1 bg-[#8C9560] p-2 rounded-md shadow-lg z-10 min-w-full max-h-60 overflow-y-auto"
+                      onMouseEnter={() => setSubmenuHover(true)}
+                      onMouseLeave={() => {
+                        setSubmenuHover(false);
+                        hideSubmenu();
+                      }}
                     >
-                      {sub}
-                    </p>
-                    
-                    ))}
-                  </div>
-                )}
+                      {item.submenu.map((sub, subIndex) => (
+                        <p
+                          key={subIndex}
+                          ref={(el) => (subMenuRefs.current[subIndex] = el)}
+                          className={`text-[#F5F1F1] py-1 px-4 cursor-pointer text-sm sm:text-base whitespace-nowrap focus:outline-none hover:underline ${
+                            focusedSubIndex === subIndex ? "bg-[#DC9C5C] text-[#762114] rounded-md" : ""
+                          }`}
+                          tabIndex={0}
+                          role="menuitem"
+                          onClick={() => handleSubmenuClick(sub)}
+                        >
+                          {sub}
+                        </p>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
         </div>
 
         <div className={`flex gap-2 ${isMobileMenuOpen ? "flex flex-col mt-4" : "hidden"} lg:flex lg:flex-row lg:mt-0`}>
-
           <button
             onClick={goToClientMenu}
             className="bg-gradient-to-r from-[#9FBF69] to-[#7D8D4E] text-white py-2 px-4 rounded-lg font-bold shadow hover:brightness-110 transition-all text-sm sm:text-base"
@@ -182,7 +195,5 @@ export default function NavegadorAdmin() {
         </div>
       </div>
     </nav>
-    
   );
-  
 }

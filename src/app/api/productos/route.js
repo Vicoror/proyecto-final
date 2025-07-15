@@ -29,6 +29,9 @@ const organizarPorCategoria = (productos) => {
       price: producto.precio,
       description: producto.descripcion,
       image: producto.imagen,
+      image2: producto.imagen2,
+      image3: producto.imagen3,
+      stock: producto.stock,
       active: producto.activo
     });
     return acc;
@@ -97,8 +100,12 @@ export async function POST(request) {
     const price = formData.get('price');
     const description = formData.get('description');
     const category = formData.get('category');
+    const stock = parseInt(formData.get('stock'), 10);
     const active = formData.get('active') === 'true';
+
     const image = formData.get('image');
+    const image2 = formData.get('image2');
+    const image3 = formData.get('image3');
 
     const [existing] = await pool.query('SELECT id_productos FROM productos WHERE id_productos = ?', [id]);
     if (existing.length > 0) {
@@ -108,18 +115,24 @@ export async function POST(request) {
       });
     }
 
-    let imagePath = '';
-    if (image && image.size > 0) {
-      const buffer = await image.arrayBuffer();
-      const base64Image = Buffer.from(buffer).toString('base64');
-      const dataUrl = `data:${image.type};base64,${base64Image}`;
-      const result = await cloudinary.uploader.upload(dataUrl);
-      imagePath = result.secure_url;
-    }
+    const subirImagen = async (img) => {
+      if (img && img.size > 0) {
+        const buffer = await img.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const dataUrl = `data:${img.type};base64,${base64}`;
+        const result = await cloudinary.uploader.upload(dataUrl);
+        return result.secure_url;
+      }
+      return "";
+    };
+
+    const imageUrl = await subirImagen(image);
+    const image2Url = await subirImagen(image2);
+    const image3Url = await subirImagen(image3);
 
     const [insert] = await pool.query(
-      'INSERT INTO productos (id_productos, nombre, precio, descripcion, categoria, imagen, activo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, name, price, description, category, imagePath, active]
+      'INSERT INTO productos (id_productos, nombre, precio, descripcion, categoria, imagen, imagen2, imagen3, stock, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, name, price, description, category, imageUrl, image2Url, image3Url, stock, active]
     );
 
     return new Response(JSON.stringify({ success: true, id: insert.insertId }), {
@@ -127,7 +140,7 @@ export async function POST(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error en API:', error);
+    console.error('Error en API POST:', error);
     return new Response(JSON.stringify({ message: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -146,8 +159,12 @@ export async function PUT(request) {
     const price = formData.get('price');
     const description = formData.get('description');
     const category = formData.get('category');
+    const stock = parseInt(formData.get('stock'), 10);
     const active = formData.get('active') === 'true';
+
     const image = formData.get('image');
+    const image2 = formData.get('image2');
+    const image3 = formData.get('image3');
 
     const table = type === 'personalizados' ? 'productos_personalizados' : 'productos';
     const idField = type === 'personalizados' ? 'id_productosPerso' : 'id_productos';
@@ -160,44 +177,29 @@ export async function PUT(request) {
       });
     }
 
-    let updateFields = {
+    const subirImagen = async (img) => {
+      if (img && img.size > 0) {
+        const buffer = await img.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const dataUrl = `data:${img.type};base64,${base64}`;
+        const result = await cloudinary.uploader.upload(dataUrl);
+        return result.secure_url;
+      }
+      return "";
+    };
+
+    const updateFields = {
       nombre: name,
       precio: parseFloat(price),
       categoria: category,
+      stock,
       activo: active ? 1 : 0
     };
 
-    if (image && image.size > 0) {
-      // Validación de tipo de archivo (solo imágenes)
-      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-      const validExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
-      
-      const fileExtension = image.name.split(".").pop().toLowerCase();
-      
-      if (!validTypes.includes(image.type) || !validExtensions.includes(fileExtension)) {
-        return Response.json({ message: "Archivo de imagen no válido. Solo se permiten imágenes JPG, PNG, WebP y GIF." }, { status: 400 });
-      }
-    
-      // Validación de tamaño de archivo (máximo 2MB en este ejemplo)
-      if (image.size > 2 * 1024 * 1024) {
-        return Response.json({ message: "La imagen es demasiado grande. El tamaño máximo es 2MB." }, { status: 400 });
-      }
-    
-      // Si pasa la validación, subimos la imagen
-      const buffer = await image.arrayBuffer();
-      const base64Image = Buffer.from(buffer).toString('base64');
-      const dataUrl = `data:${image.type};base64,${base64Image}`;
-    
-      const result = await cloudinary.uploader.upload(dataUrl);
-      updateFields.imagen = result.secure_url;
-    } else {
-      return Response.json({ message: "Este formato de imagen no es válido." }, { status: 400 });
-    }
-    
-
-    if (type === 'principal' && description) {
-      updateFields.descripcion = description;
-    }
+    if (description) updateFields.descripcion = description;
+    if (image && image.size > 0) updateFields.imagen = await subirImagen(image);
+    if (image2 && image2.size > 0) updateFields.imagen2 = await subirImagen(image2);
+    if (image3 && image3.size > 0) updateFields.imagen3 = await subirImagen(image3);
 
     const setClause = Object.keys(updateFields).map(key => `${key} = ?`).join(', ');
     const values = [...Object.values(updateFields), id];
@@ -216,7 +218,7 @@ export async function PUT(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error en API:', error);
+    console.error('Error en API PUT:', error);
     return new Response(JSON.stringify({ message: 'Error al actualizar el producto', error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
