@@ -66,6 +66,7 @@ export default function PaginaBase() {
             imagen4: null,
             imagen5: null,
             video: null,
+            
           },
         };
 
@@ -108,7 +109,10 @@ export default function PaginaBase() {
     const form = new FormData();
 
     Object.entries(inputs).forEach(([key, value]) => {
-      if (value) form.append(key, value);
+      // Solo omitir null o undefined, pero aceptar "" (cadena vacía)
+      if (value !== null && value !== undefined) {
+        form.append(key, value);
+      }
     });
 
     try {

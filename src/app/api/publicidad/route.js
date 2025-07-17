@@ -75,7 +75,7 @@ export async function PUT(req) {
 async function guardarEnDB(archivos, enlaces) {
   const conn = await pool.getConnection();
   try {
-    // Recorremos cada archivo subido
+    // 1. Procesar archivos subidos (como lo haces actualmente)
     for (const key of Object.keys(archivos)) {
       const { tipo, url } = archivos[key];
       let enlace = null;
@@ -88,24 +88,55 @@ async function guardarEnDB(archivos, enlaces) {
         enlace = enlaces["enlaceVideo"] || null;
       }
 
-      // Calculamos el ID (imagen1 = id 1, imagen2 = 2, ..., video = 6)
       const id = key === "video" ? 6 : parseInt(key.replace("imagen", ""), 10);
 
-      // Verificamos si ya existe un registro con ese ID
       const [existente] = await conn.query("SELECT id FROM publicidad WHERE id = ?", [id]);
 
       if (existente.length > 0) {
-        // Actualizamos
         await conn.query(
           "UPDATE publicidad SET tipo = ?, url = ?, enlace = ? WHERE id = ?",
           [tipo, url, enlace, id]
         );
       } else {
-        // Insertamos
         await conn.query(
           "INSERT INTO publicidad (id, tipo, url, enlace) VALUES (?, ?, ?, ?)",
           [id, tipo, url, enlace]
         );
+      }
+    }
+
+    // 2. Procesar enlaces sin archivos nuevos
+    for (const key of Object.keys(enlaces)) {
+      // Solo procesar enlaces de imágenes (enlace1, enlace2, etc.) y enlaceVideo
+      if (key.startsWith("enlace")) {
+        let id, tipo;
+        
+        if (key === "enlaceVideo") {
+          id = 6;
+          tipo = "video";
+        } else {
+          const num = key.replace("enlace", "");
+          id = parseInt(num, 10);
+          tipo = "imagen";
+        }
+
+        const enlace = enlaces[key] || null;
+
+        const [existente] = await conn.query("SELECT id FROM publicidad WHERE id = ?", [id]);
+
+        if (existente.length > 0) {
+          // Solo actualizamos el enlace, mantenemos tipo y url existentes
+          await conn.query(
+            "UPDATE publicidad SET enlace = ? WHERE id = ?",
+            [enlace, id]
+          );
+        } else {
+          // Si no existe el registro, insertamos con url null (se debería subir una imagen después)
+          await conn.query(
+            "INSERT INTO publicidad (id, tipo, url, enlace) VALUES (?, ?, NULL, ?)",
+            [id, tipo, enlace]
+          );
+        }
       }
     }
   } finally {
