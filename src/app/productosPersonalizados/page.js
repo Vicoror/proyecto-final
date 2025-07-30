@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiShoppingCart, FiUser, FiHome } from "react-icons/fi";
+import { FiUser, FiHome } from "react-icons/fi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
+import IconoCarrito from "@/components/IconoCarrito";
+
 
 export default function PersonalizarJoyas() {
   const router = useRouter();
+  const [cantidad, setCantidad] = useState(1);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("null");
   const [categorias, setCategorias] = useState([]);
   const [modelos, setModelos] = useState([]);
@@ -55,7 +59,13 @@ export default function PersonalizarJoyas() {
   useEffect(() => {
     if (!modeloSeleccionado) return;
 
-    let total = parseFloat(modeloSeleccionado.PrecioManoObra) || 0;
+            // Inicia en 0 en lugar de incluir PrecioManoObra directamente
+        let total = 0; 
+
+        // Suma el precio base (que ya incluye mano de obra internamente)
+        if (modeloSeleccionado.PrecioManoObra) {
+          total += parseFloat(modeloSeleccionado.PrecioManoObra) || 0;
+        }
 
     // Calcular precio para cada material seleccionado
     Object.entries(materialesSeleccionados).forEach(([tipo, material]) => {
@@ -140,15 +150,25 @@ export default function PersonalizarJoyas() {
             </h1>
             <FiHome className="ml-2 text-[#7B2710] text-2xl" />
           </Link>
-          <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-[#7B2710] hover:text-[#DC9C5C]">
+
+          {/* Alineación de íconos */}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+            <Link href="/login" className="text-[#7B2710] hover:text-[#DC9C5C] flex items-center">
               <FiUser className="text-2xl" />
             </Link>
-            <button onClick={() => router.push("/cart")} className="text-[#7B2710] hover:text-[#DC9C5C]">
-              <FiShoppingCart className="text-2xl" />
-            </button>
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+              Iniciar sesión
+            </div>
+            </div>
+            {/* IconoCarrito también alineado */}
+            <div className="flex items-center text-[#7B2710] hover:text-[#DC9C5C]">
+              <IconoCarrito />
+            </div>
           </div>
         </header>
+
+
 
         <div className="bg-[#F5F1F1] p-6 rounded-2xl shadow-xl space-y-6 border-5 border-[#7B2710]">
           <h2 className="text-xl font-semibold text-[#7B2710]">1. Selecciona una categoría</h2>
@@ -265,12 +285,22 @@ export default function PersonalizarJoyas() {
             )}
           </div>
 
-          <button 
-            className="mt-4 w-full bg-[#7B2710] hover:bg-[#DC9C5C] text-white py-2 px-4 rounded transition-all"
-            disabled={!modeloSeleccionado || !materialesSeleccionados.metal}
-          >
-            Agregar al carrito
-          </button>
+          <BotonAgregarCarrito
+            producto={{
+              id: `personalizado-${modeloSeleccionado?.id_ProPer}`,
+              tipo: "personalizado",
+              imagen: modeloSeleccionado?.ImagenPP,
+              nombre: modeloSeleccionado?.nombreModelo,
+              materiales: materialesSeleccionados,
+              tiempoEntrega: modeloSeleccionado?.tiempoEntrega,
+              precio: precioTotal,
+              cantidad: cantidad // aquí se envía la cantidad seleccionada
+            }}
+            deshabilitado={!modeloSeleccionado || !materialesSeleccionados.metal}
+          />
+
+
+          
 
           <p className="mt-6 text-center text-[#7B2710] font-medium">
             Si no encuentras lo que buscas, contáctanos por WhatsApp y cotizamos el modelo que necesitas.

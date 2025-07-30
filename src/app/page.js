@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import Publicidad from "@/components/Publicidad";
 import VerProducto from "@/components/verProducto";
+import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
+import IconoCarrito from "@/components/IconoCarrito";
+
 
 
 const categorias = ["Anillos", "Collares", "Aretes", "Pulseras", "Brazaletes", "Piedras"];
@@ -145,41 +148,55 @@ export default function Home() {
         <p className="text-xs sm:text-sm px-2 truncate">{anuncios[anuncioIndex]?.titulo}</p>
       </motion.div>
 
-      {/* Header */}
       <header className="p-4 pt-14 md:p-5 flex flex-col md:flex-row md:justify-between md:items-center">
-        <div className="flex justify-between items-center w-full md:w-auto">
-          {windowWidth <= 768 && (
-            <button onClick={toggleMenu} className="text-2xl text-[#8C9560]">
-              <FiMenu />
-            </button>
-          )}
-          <div className="text-center pt-0 sm:pt-12">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-5xl font-bold" style={{ fontFamily: "Alex Brush" }}>
-              Bernarda Sierra
-            </h1>
-            <h2 className="text-lg sm:text-xl text-[#DC9C5C] mt-1">
-              Joyería artesanal
-            </h2>
+          <div className="flex justify-between items-center w-full md:w-auto">
+            {windowWidth <= 768 && (
+              <button onClick={toggleMenu} className="text-2xl text-[#8C9560]">
+                <FiMenu />
+              </button>
+            )}
+
+            <div className="text-center pt-0 sm:pt-12">
+              <h1
+                className="text-3xl sm:text-5xl md:text-6xl lg:text-5xl font-bold"
+                style={{ fontFamily: "Alex Brush" }}
+              >
+                Bernarda Sierra
+              </h1>
+              <h2 className="text-lg sm:text-xl text-[#DC9C5C] mt-1">
+                Joyería artesanal
+              </h2>
+            </div>
+
+            {/* Íconos en móvil */}
+            <div className="flex items-center justify-end space-x-3 text-xl md:hidden text-[#8C9560]">
+              <Link href="/login" className="hover:text-[#DC9C5C]">
+                <FiUser className="text-2xl" />
+              </Link>
+              <div className="hover:text-[#DC9C5C]">
+                <IconoCarrito />
+              </div>
+            </div>
           </div>
 
-          <div className="flex space-x-3 text-lg md:hidden">
-            <Link href="/login" className="text-[#8C9560] hover:text-[#DC9C5C]">
-              <FiUser />
+          {/* Íconos en escritorio */}
+          <div className="hidden md:flex items-center space-x-4 text-xl text-[#8C9560] hover:text-[#DC9C5C]">
+            <div className="relative group">
+            <Link 
+            href="/login" 
+            className="text-[#8C9560] hover:text-[#DC9C5C]">
+              <FiUser className="text-2xl" />
             </Link>
-            <button className="text-[#8C9560] hover:text-[#DC9C5C]">
-              <FiShoppingBag />
-            </button>
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+              Iniciar sesión
+            </div>
+            </div>
+            <div className="flex items-center text-[#8C9560] hover:text-[#DC9C5C]">
+              <IconoCarrito />
+            </div>
           </div>
-        </div>
-        <div className="hidden md:flex items-center space-x-4 text-xl">
-          <Link href="/login" className="text-[#8C9560] hover:text-[#DC9C5C]">
-            <FiUser />
-          </Link>
-          <button className="text-[#8C9560] hover:text-[#DC9C5C]">
-            <FiShoppingBag />
-          </button>
-        </div>
-      </header>
+        </header>
+
 
       {/* Navegación desktop */}
       {windowWidth > 768 && (
@@ -262,41 +279,42 @@ export default function Home() {
           </h2>
           <hr className="mb-3 md:mb-4 border-t border-[#8C956040]" />
           <div className="flex overflow-x-auto pb-4 space-x-3 sm:space-x-4 md:space-x-6 p-2 md:p-4 relative z-0 scrollbar-hide">
-            {items.map((producto, index) => (
-              <div
-                  key={producto.id || index}
-                  className="relative min-w-[140px] sm:min-w-[160px] md:min-w-[180px] lg:min-w-[200px] max-w-[220px] bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform duration-300 hover:scale-105 flex-shrink-0 h-[260px] sm:h-[260px] md:h-[300px] lg:h-[280px]"
-                >
-                <img
-                  src={producto.image || "/placeholder.jpg"}
-                  alt={producto.name}
-                  onClick={() => setVerProductoId(producto.id)} // nuevo
-                  className="w-full h-36 object-cover object-center rounded-lg transition-transform duration-300 hover:scale-105"
-                />
-                <div className="flex-grow flex flex-col justify-between mt-2">
-                  <div className="relative group">
-                    <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center cursor-pointer line-clamp-2">
-                      {truncateText(producto.name, 18)}
-                    </h3>
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 w-max max-w-[200px] px-2 py-1 bg-white border border-gray-200 shadow-lg rounded-md text-xs text-gray-800 opacity-0 pointer-events-none transition-all duration-150 group-hover:opacity-100">
-                      {producto.name}
-                    </div>
-                  </div>
-                  <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
-                    ${producto.price}
-                  </p>
-                </div>
-                <div className="flex justify-center mt-3">
-                  <button className="bg-[#762114] text-white py-1 sm:py-2 px-4 sm:px-6 rounded-lg hover:bg-[#DC9C5C] transition-colors w-full max-w-[160px] sm:max-w-[180px] text-xs sm:text-sm">
-                    Agregar al carrito
-                  </button>
-                </div>
-              </div>
-            ))}
+            {items.map((producto, index) => {
+
+  return (
+    <div
+      key={producto.id || index}
+      className="relative min-w-[140px] sm:min-w-[160px] md:min-w-[180px] lg:min-w-[200px] max-w-[220px] bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform duration-300 hover:scale-105 flex-shrink-0 h-[260px] sm:h-[260px] md:h-[300px] lg:h-[280px]"
+    >
+      <img
+        src={producto.image && producto.image.trim() !== "" ? producto.image : "/placeholder.jpg"}
+        alt={producto.name || "Producto"}
+        onClick={() => setVerProductoId(producto.id)}
+        className="w-full h-36 object-cover object-center rounded-lg transition-transform duration-300 hover:scale-105"
+      />
+
+      <div className="flex-grow flex flex-col justify-between mt-2">
+        <div className="relative group">
+          <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center cursor-pointer line-clamp-2">
+            {truncateText(producto.name, 18)}
+          </h3>
+          <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 w-max max-w-[200px] px-2 py-1 bg-white border border-gray-200 shadow-lg rounded-md text-xs text-gray-800 opacity-0 pointer-events-none transition-all duration-150 group-hover:opacity-100">
+            {producto.name}
+          </div>
+        </div>
+        <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
+          ${producto.price}
+        </p>
+        <BotonAgregarCarrito producto={producto} />
+      </div>
+    </div>
+  );
+})}
+
           </div>
         </section>
         
-      ))}
+      ))} 
       {verProductoId && (
           <VerProducto idProducto={verProductoId} onClose={() => setVerProductoId(null)} />
         )}
@@ -325,6 +343,5 @@ export default function Home() {
         }
       `}</style>
     </div>
-    
-  );
+  ); 
 }

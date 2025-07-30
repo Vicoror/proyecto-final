@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home } from "lucide-react"; // Importamos el ícono de "Inicio"
 import Captcha from '@/components/Captcha'; // Importamos el componente Captcha
+import { useAuth } from "@/components/AuthContext";
 
 export default function LoginPage() {
   // Estados para email, contraseña, errores y carga
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null); // Estado para token de CAPTCHA
   const router = useRouter();
+  const { login } = useAuth();
+  
 
   // Función que maneja el envío del formulario
   const handleLogin = async (e) => {
@@ -41,7 +44,7 @@ export default function LoginPage() {
       }
 
       const result = await response.json();
-      localStorage.setItem("user", JSON.stringify(result.user));
+      login(result.user);
 
       alert("Inicio de sesión exitoso!");
 
