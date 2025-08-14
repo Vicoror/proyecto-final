@@ -8,6 +8,13 @@ export default function PaginaBase() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+   const [errores, setErrores] = useState({
+    nombreModelo: "",
+    categoria: "",
+    imagen: "",
+    tiempoEntrega: "",
+    precioManoObra: ""
+  });
 
   const [categorias] = useState([
     "Aretes",
@@ -73,21 +80,168 @@ export default function PaginaBase() {
     }
   };
 
-  const manejarCambio = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === "checkbox") {
-      setFormulario({ ...formulario, [name]: checked });
-    } else {
-      setFormulario({ ...formulario, [name]: value });
-    }
+  const sanitizarInput = (valor) => {
+    // Elimina caracteres especiales que podrían usarse para inyección
+    return valor.replace(/[<>"'`;]/g, "");
   };
 
-  const manejarArchivo = (e) => {
-    if (e.target.files[0]) {
-      setFormulario((prev) => ({
+  const manejarCambio = (e) => {
+    const { name, value, type, checked } = e.target;
+    let valorSanitizado = value;
+    
+    // Sanitizar solo campos de texto
+    if (type === "text" || name === "nombreModelo" || name === "categoria") {
+      valorSanitizado = sanitizarInput(value);
+      
+      // Validación en tiempo real para nombreModelo
+      if (name === "nombreModelo") {
+        const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,35}$/;
+        setErrores(prev => ({
+          ...prev,
+          nombreModelo: regex.test(valorSanitizado) ? "" : "Solo se permiten letras y espacios (máx 35 caracteres)"
+        }));
+      }
+
+      
+    }
+
+    setFormulario(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : valorSanitizado
+    }));
+  };
+ const manejarArchivo = (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+
+    // Validar tipo de imagen
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(archivo.type)) {
+      setErrores(prev => ({
         ...prev,
-        imagen: e.target.files[0],
+        imagen: "Formato no válido. Solo se aceptan JPG, PNG o WEBP"
       }));
+      return;
+    }
+
+    // Validar tamaño (opcional: 5MB máximo)
+    if (archivo.size > 5 * 1024 * 1024) {
+      setErrores(prev => ({
+        ...prev,
+        imagen: "La imagen es demasiado grande (máx 5MB)"
+      }));
+      return;
+    }
+
+    setErrores(prev => ({ ...prev, imagen: "" }));
+    setFormulario(prev => ({ ...prev, imagen: archivo }));
+  };
+
+  const manejarListaConGramos = (tipo, id, valor, marcadoManual = false) => {
+    setFormulario((prev) => {
+      let actual = prev[tipo].filter((item) => item.id !== id);
+
+      if (marcadoManual) {
+        if (valor === true) {
+          actual.push({ id, valor: "", activar: true });
+        }
+      } else {
+        if (valor >= 1 && valor <= 1000) {
+          actual.push({ id, valor, activar: true });
+        }
+      }
+
+      return { ...prev, [tipo]: actual };
+    });
+  };
+
+  const validarFormulario = () => {
+    const nuevosErrores = {
+      nombreModelo: "",
+      categoria: "",
+      imagen: "",
+      tiempoEntrega: "",
+      precioManoObra: ""
+    };
+
+    // Validar nombre
+    if (!formulario.nombreModelo.trim()) {
+      nuevosErrores.nombreModelo = "El nombre es requerido";
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,35}$/.test(formulario.nombreModelo)) {
+      nuevosErrores.nombreModelo = "Solo letras y espacios (máx 35 caracteres)";
+    }
+
+    // Validar categoría
+    if (!formulario.categoria) {
+      nuevosErrores.categoria = "Seleccione una categoría";
+    }
+
+    // Validar imagen
+    if (!formulario.imagen) {
+      nuevosErrores.imagen = "La imagen es requerida";
+    }
+
+    // Validar tiempo de entrega
+      if (formulario.tiempoEntrega === "" || formulario.tiempoEntrega === null || formulario.tiempoEntrega === undefined) {
+    nuevosErrores.tiempoEntrega = "Este campo es requerido";
+  } else {
+    const dias = Number(formulario.tiempoEntrega);
+    if (isNaN(dias)) {
+      nuevosErrores.tiempoEntrega = "Debe ser un número válido";
+    } else if (dias < 0) {
+      nuevosErrores.tiempoEntrega = "No puede ser negativo";
+    } else if (dias > 30) {
+      nuevosErrores.tiempoEntrega = "Máximo 30 días";
+    } else if (!Number.isInteger(dias)) {
+      nuevosErrores.tiempoEntrega = "Debe ser un número entero";
+    }
+  }
+
+    // Validar precio mano de obra (30-5000)
+      const precio = Number(formulario.precioManoObra);
+      if (!formulario.precioManoObra || isNaN(precio)) {
+        nuevosErrores.precioManoObra = "Debe ser un número válido";
+      } else if (precio < 30) {
+        nuevosErrores.precioManoObra = "Mínimo $30";
+      } else if (precio > 5000) {
+        nuevosErrores.precioManoObra = "Máximo $5000";
+      } else if (!Number.isInteger(precio)) {
+        nuevosErrores.precioManoObra = "Debe ser un número entero";
+    }
+
+    setErrores(nuevosErrores);
+    return !Object.values(nuevosErrores).some(error => error !== "");
+  };
+
+  const enviarFormulario = async () => {
+    if (!validarFormulario()) return;
+
+    const formData = new FormData();
+    formData.append("nombreModelo", formulario.nombreModelo);
+    formData.append("categoria", formulario.categoria);
+    formData.append("tiempoEntrega", formulario.tiempoEntrega);
+    formData.append("precioManoObra", formulario.precioManoObra);
+    formData.append("activar", formulario.activar);
+    formData.append("metales", JSON.stringify(formulario.metales));
+    formData.append("piedras", JSON.stringify(formulario.piedras));
+    formData.append("hilos", JSON.stringify(formulario.hilos));
+    formData.append("imagen", formulario.imagen);
+
+    try {
+      const res = await fetch("/api/productosPersonalizados", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        alert("Producto guardado correctamente");
+        // Resetear formulario...
+      } else {
+        throw new Error(await res.text());
+      }
+    } catch (error) {
+      console.error("Error al enviar:", error);
+      alert("Error al guardar el producto");
     }
   };
 
@@ -115,104 +269,6 @@ export default function PaginaBase() {
       return { ...prev, [tipo]: sinEste };
     });
   };
-
-  const validarFormulario = () => {
-    const letras = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,35}$/;
-    if (!letras.test(formulario.nombreModelo)) return alert("Nombre inválido. Sólo se aceptan letras");
-    if (!categorias.includes(formulario.categoria)) return alert("Categoría inválida");
-    if (formulario.tiempoEntrega > 30) return alert("Máximo 30 días");
-    if (!Number.isInteger(Number(formulario.precioManoObra))) return alert("El precio debe ser un número entero");
-    if (formulario.precioManoObra > 5000) return alert("El precio Máximo es de $5000");
-    return true;
-  };
-
-  const enviarFormulario = async () => {
-        if (!validarFormulario()) return;
-
-        const formData = new FormData();
-        formData.append("nombreModelo", formulario.nombreModelo);
-        formData.append("categoria", formulario.categoria);
-        formData.append("tiempoEntrega", formulario.tiempoEntrega);
-        formData.append("precioManoObra", formulario.precioManoObra);
-        formData.append("activar", formulario.activar ? "true" : "false");
-
-        // ⚠️ Usamos los arreglos actualizados directamente desde el estado "formulario"
-        formData.append("metales", JSON.stringify(formulario.metales));
-        formData.append("piedras", JSON.stringify(formulario.piedras));
-        formData.append("hilos", JSON.stringify(formulario.hilos));
-
-        if (formulario.imagen) {
-          formData.append("imagen", formulario.imagen);
-        }
-
-        try {
-          const respuesta = await fetch("/api/productosPersonalizados", {
-            method: "POST",
-            body: formData,
-          });
-
-          const resultado = await respuesta.json();
-          if (respuesta.ok) {
-            alert("Producto guardado correctamente");
-            // Reiniciar formulario y selección después de guardar exitosamente
-              setFormulario({
-                nombreModelo: "",
-                categoria: "",
-                metales: [],
-                piedras: [],
-                hilos: [],
-                tiempoEntrega: "",
-                precioManoObra: "",
-                activar: true,
-                imagen: null,
-              });
-
-              setSeleccionados({
-                metales: {},
-                piedras: {},
-                hilos: {},
-              });
-
-            console.log("✅ Materiales enviados:", {
-              metales: formulario.metales,
-              piedras: formulario.piedras,
-              hilos: formulario.hilos,
-            });
-          } else {
-            alert("Error: " + resultado.mensaje);
-          }
-        } catch (error) {
-          console.error("Error al enviar:", error);
-          alert("Error al guardar el producto");
-        }
-      };
-
-          const manejarListaConGramos = (tipo, id, valor, marcadoManual = false) => {
-              setFormulario((prev) => {
-                // Copiamos el arreglo actual sin el ítem que coincide con el id
-                let actual = prev[tipo].filter((item) => item.id !== id);
-
-                if (marcadoManual) {
-                  // Si el checkbox fue marcado (true), agregamos con valor 1 por defecto
-                  if (valor === true) {
-                    actual.push({ id, valor: 1, activar: true });
-                  }
-                  // Si se desmarcó (valor === false), no agregamos nada, así se elimina
-                } else {
-                  // Cambió el valor numérico, actualizamos sólo si está en rango
-                  if (valor >= 1 && valor <= 1000) {
-                    actual.push({ id, valor, activar: true });
-                  } else if (valor <= 0 || valor === "") {
-                    // Si valor no válido o 0, no agregamos (eliminamos)
-                    // ya filtramos arriba, no hacemos nada aquí
-                  }
-                }
-
-                return { ...prev, [tipo]: actual };
-              });
-            };
-
-
 
   return (
     <div
@@ -246,7 +302,7 @@ export default function PaginaBase() {
                 className="w-full p-2 rounded border"
                 placeholder="Ej. Pulsera Maya"
                 maxLength={35}
-              />
+              /> {errores.nombreModelo && <p className="text-red-500 text-sm mt-1">{errores.nombreModelo}</p>}
             </div>
 
             <div>
@@ -410,25 +466,63 @@ export default function PaginaBase() {
                 type="number"
                 name="tiempoEntrega"
                 value={formulario.tiempoEntrega}
-                onChange={manejarCambio}
-                min="1"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Solo permitir valores numéricos entre 0 y 30
+                  if (value === '' || (Number(value) >= 0 && Number(value) <= 30)) {
+                    setFormulario({
+                      ...formulario,
+                      tiempoEntrega: value
+                    });
+                  }
+                }}
+                min="0"
                 max="30"
                 className="w-full p-2 rounded border"
+                placeholder="0-30 días"
+                onKeyDown={(e) => {
+                  // Bloquear teclas no numéricas (excepto comandos de edición)
+                  if (!/[0-9]/.test(e.key) && 
+                      e.key !== 'Backspace' && 
+                      e.key !== 'Delete' && 
+                      e.key !== 'ArrowLeft' && 
+                      e.key !== 'ArrowRight' &&
+                      e.key !== 'Tab') {
+                    e.preventDefault();
+                  }
+                }}
               />
+              {formulario.tiempoEntrega > 30 && (
+                <p className="text-red-500 text-sm mt-1">El tiempo máximo permitido es 30 días</p>
+              )}
             </div>
 
             <div>
-              <label className="block font-semibold text-[#7B2710]">Precio mano de obra</label>
-              <input
-                type="number"
-                name="precioManoObra"
-                value={formulario.precioManoObra}
-                onChange={manejarCambio}
-                min="0"
-                max="5000"
-                className="w-full p-2 rounded border"
-              />
-            </div>
+                <label className="block font-semibold text-[#7B2710]">Precio mano de obra ($)</label>
+                <input
+                  type="number"
+                  name="precioManoObra"
+                  value={formulario.precioManoObra}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    // Solo permitir números enteros entre 30 y 5000
+                    if (valor === '' || (/^\d+$/.test(valor) && parseInt(valor) >= 0 && parseInt(valor) <= 5000)) {
+                      setFormulario({
+                        ...formulario,
+                        precioManoObra: valor
+                      });
+                    }
+                  }}
+                  min="0"
+                  max="5000"
+                  className="w-full p-2 rounded border"
+                  placeholder="30-5000"
+        
+                />
+                {errores.precioManoObra && (
+                  <p className="text-red-500 text-sm mt-1">{errores.precioManoObra}</p>
+                )}
+              </div>
 
             <div className="flex items-center gap-2">
               <label className="font-semibold text-[#7B2710]">¿Activar producto?</label>
@@ -442,8 +536,14 @@ export default function PaginaBase() {
 
             <div>
               <label className="block font-semibold text-[#7B2710]">Imagen del producto</label>
-              <input type="file" name="imagen" onChange={manejarArchivo} />
-            </div>
+               <input 
+                    type="file" 
+                    name="imagen" 
+                    onChange={manejarArchivo} 
+                    accept="image/jpeg, image/png, image/webp"
+                  />
+                  {errores.imagen && <p className="text-red-500 text-sm mt-1">{errores.imagen}</p>}
+                </div>
 
             <button
               type="button"

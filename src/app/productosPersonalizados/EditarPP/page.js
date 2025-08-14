@@ -1,14 +1,14 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
-import { ArrowLeft} from "lucide-react";
-import EditarMateriales from "@/components/EditarMateriales"; // Ajusta la ruta si es necesario
+import { ArrowLeft } from "lucide-react";
+import EditarMateriales from "@/components/EditarMateriales";
 import EditarPP from "../../../components/EditarPP";
-
 
 export default function PaginaBase() {
   const router = useRouter();
+  const [mostrarMateriales, setMostrarMateriales] = useState(false);
 
   // Protección de ruta
   useEffect(() => {
@@ -17,6 +17,10 @@ export default function PaginaBase() {
       router.replace("/login");
     }
   }, []);
+
+  const toggleMateriales = () => {
+    setMostrarMateriales(!mostrarMateriales);
+  };
 
   return (
     <div
@@ -40,12 +44,33 @@ export default function PaginaBase() {
             Anterior
           </button>
         </div>
+        
         {/* Sección de editar publicidad expandida */}
         <section className="w-full bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#762114] p-6 md:p-8">
-          <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Productos Personalizados y Materiales</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-[#7B2710]">Gestión de Productos Personalizados y Materiales</h2>
+            <button 
+              onClick={toggleMateriales}
+              className="bg-[#7B2710] hover:bg-[#5e1d0a] text-[#F5F1F1] font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z" />
+              </svg>
+              {mostrarMateriales ? "Ocultar Materiales" : "Gestionar Materiales"}
+            </button>
+          </div>
+
+          {/* Componente EditarMateriales que aparece/desaparece */}
+          {mostrarMateriales && (
+            <div className="mb-6 border border-[#762114] rounded-lg p-4 bg-white">
+              <h3 className="text-xl font-semibold text-[#7B2710] mb-4">Gestión de Materiales</h3>
+              <EditarMateriales />
+            </div>
+          )}
+
+          {/* Componente de búsqueda EditarPP */}
           <EditarPP/>
-          <EditarMateriales/> 
-          
         </section>
       </main>
     </div>

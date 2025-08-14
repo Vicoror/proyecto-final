@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/components/AuthContext";
 
 const menuItems = [
   { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Stock"] },
   { title: "Publicidad", submenu: ["Editar Anuncios", "Editar Publicidad"] },
+  { title: "Envios", submenu: ["Gestión de envios", "Seguimiento de envios"] },
   { title: "Pedidos", submenu: ["Editar status de pedidos"] },
   { title: "Gestión de clientes", submenu: ["Datos de clientes", "Editar clientes"] },
   { title: "Reportes", submenu: ["Reportes", "Métricas", "Ventas", "Chat"] },
@@ -21,11 +23,18 @@ export default function NavegadorAdmin() {
   const router = useRouter();
   const mainMenuRefs = useRef([]);
   const subMenuRefs = useRef([]);
+  const {logout } = useAuth(); 
 
-  const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    router.replace("/login");
+   const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      logout(); // Limpiar contexto de autenticación
+      localStorage.removeItem('authToken'); // Limpiar token
+      localStorage.removeItem('user'); // Limpiar datos de usuario (si existen)
+      router.push('/'); // Redirigir al home
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   const goToClientMenu = () => {
@@ -39,6 +48,7 @@ export default function NavegadorAdmin() {
       "Stock": "/gestionProductos/ListaProductos",
       "Editar Anuncios": "/Publicidad/EditarAnuncios",
       "Editar Publicidad": "/Publicidad/EditarPublicidad",
+      "Gestión de envios": "/gestionEnvios",
       "Editar status de pedidos": "/Pedidos",
       "Datos de clientes": "/gestionClientes/DatosClientes",
       "Editar clientes": "/gestionClientes/EditarClientes",

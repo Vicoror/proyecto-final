@@ -15,6 +15,7 @@ export default function EditarMateriales() {
   });
   const [modoEdicion, setModoEdicion] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorImagen, setErrorImagen] = useState("");
 
   useEffect(() => {
     obtenerMateriales();
@@ -31,11 +32,40 @@ export default function EditarMateriales() {
 
   const manejarCambio = (e) => {
     const { name, value } = e.target;
-    setFormulario({ ...formulario, [name]: value });
+    
+    if (name === "nombre") {
+      // Validar que solo sean letras, números o acentos (máximo 35 caracteres)
+      const regex = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
+      if (value === "" || regex.test(value)) {
+        if (value.length <= 35) {
+          setFormulario({ ...formulario, [name]: value });
+        }
+      }
+    } else if (name === "precio") {
+      // Validar que solo sean números entre 0 y 5000
+      const regex = /^[0-9]*\.?[0-9]*$/;
+      if (value === "" || regex.test(value)) {
+        if (value === "" || (parseFloat(value) >= 0 && parseFloat(value) <= 5000)) {
+          setFormulario({ ...formulario, [name]: value });
+        }
+      }
+    } else {
+      setFormulario({ ...formulario, [name]: value });
+    }
   };
 
   const manejarArchivo = (e) => {
-    setFormulario({ ...formulario, imagen: e.target.files[0] });
+    const file = e.target.files[0];
+    if (file) {
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      if (validTypes.includes(file.type)) {
+        setFormulario({ ...formulario, imagen: file });
+        setErrorImagen("");
+      } else {
+        setErrorImagen("Formato inválido. Solo se permiten imágenes (JPEG, JPG, PNG, WEBP, GIF).");
+        e.target.value = ""; // Limpiar el input file
+      }
+    }
   };
 
   const manejarEditar = (tipo, item) => {
@@ -48,23 +78,25 @@ export default function EditarMateriales() {
       activar: tipo === "metal" ? item.activarM : tipo === "piedra" ? item.activarP : item.activarH
     });
     setModoEdicion(true);
+    setErrorImagen("");
   };
 
   const manejarCancelar = () => {
     setFormulario({ tipo: "metal", id: null, nombre: "", precio: "", imagen: null, activar: "1" });
     setModoEdicion(false);
+    setErrorImagen("");
   };
 
   const manejarGuardar = async () => {
-    const nombreValido = /^[a-zA-ZÀ-ÿ0-9.,%\s]*$/;
-    const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif|svg\+xml)$/.test(file?.type);
+    const nombreValido = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
+    const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif)$/.test(file?.type);
 
-    if (!formulario.nombre || formulario.nombre.length > 25 || !nombreValido.test(formulario.nombre)) {
-      return alert("Nombre inválido. Solo letras, números, acentos y puntuaciones como . , % están permitidos.");
+    if (!formulario.nombre || formulario.nombre.length > 35 || !nombreValido.test(formulario.nombre)) {
+      return alert("Nombre inválido. Solo letras, números y acentos están permitidos (máximo 35 caracteres).");
     }
 
-    if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 50000) {
-      return alert("El precio debe ser un número válido y no mayor a 50000.");
+    if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 5000) {
+      return alert("El precio debe ser un número válido entre 0 y 5000.");
     }
 
     if (formulario.imagen) {
@@ -130,49 +162,49 @@ export default function EditarMateriales() {
         <table className="w-full border bg-white text-center">
           <thead className="bg-[#DC9C5C] text-white">
             <tr>
-  <th>Nombre</th>
-  <th>Precio</th>
-  <th>Imagen</th>
-  <th>Estado</th>
-  <th>Acciones</th>
-</tr>
-</thead>
-<tbody>
-  {materiales[nombrePlural]?.map((item) => (
-    <tr key={item[`id_${tipo}`]} className="border-b">
-      <td>{tipo === "metal" ? item.nombreM : tipo === "piedra" ? item.nombrePiedra : item.color}</td>
-      <td>${tipo === "metal" ? item.precioM : tipo === "piedra" ? item.precioP : item.precioH}</td>
-      <td className="flex justify-center items-center">
-        {item[tipo === "metal" ? "imagenM" : tipo === "piedra" ? "imagenPiedra" : "imagenH"] && (
-          <img
-            src={item[tipo === "metal" ? "imagenM" : tipo === "piedra" ? "imagenPiedra" : "imagenH"]}
-            alt=""
-            className="w-15 h-12 object-cover rounded"
-          />
-        )}
-      </td>
-      <td>
-        <span
-          className={
-            (tipo === "metal" ? item.activarM : tipo === "piedra" ? item.activarP : item.activarH) === "1"
-              ? "text-green-600 font-semibold"
-              : "text-red-600 font-semibold"
-          }
-        >
-          {(tipo === "metal" ? item.activarM : tipo === "piedra" ? item.activarP : item.activarH) === "1"
-            ? "Activado"
-            : "Desactivado"}
-        </span>
-      </td>
-      <td>
-        <button
-          onClick={() => manejarEditar(tipo, item)}
-          className="bg-[#8C9560] text-white px-2 py-1 rounded hover:bg-green-700"
-        >
-          Editar
-        </button>
-      </td>
-    </tr>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Imagen</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {materiales[nombrePlural]?.map((item) => (
+              <tr key={item[`id_${tipo}`]} className="border-b">
+                <td>{tipo === "metal" ? item.nombreM : tipo === "piedra" ? item.nombrePiedra : item.color}</td>
+                <td>${tipo === "metal" ? item.precioM : tipo === "piedra" ? item.precioP : item.precioH}</td>
+                <td className="flex justify-center items-center">
+                  {item[tipo === "metal" ? "imagenM" : tipo === "piedra" ? "imagenPiedra" : "imagenH"] && (
+                    <img
+                      src={item[tipo === "metal" ? "imagenM" : tipo === "piedra" ? "imagenPiedra" : "imagenH"]}
+                      alt=""
+                      className="w-15 h-12 object-cover rounded"
+                    />
+                  )}
+                </td>
+                <td>
+                  <span
+                    className={
+                      (tipo === "metal" ? item.activarM : tipo === "piedra" ? item.activarP : item.activarH) === "1"
+                        ? "text-green-600 font-semibold"
+                        : "text-red-600 font-semibold"
+                    }
+                  >
+                    {(tipo === "metal" ? item.activarM : tipo === "piedra" ? item.activarP : item.activarH) === "1"
+                      ? "Activado"
+                      : "Desactivado"}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    onClick={() => manejarEditar(tipo, item)}
+                    className="bg-[#8C9560] text-white px-2 py-1 rounded hover:bg-green-700"
+                  >
+                    Editar
+                  </button>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
@@ -183,79 +215,92 @@ export default function EditarMateriales() {
   return (
     <div className="p-0  bg-[#F5F1F1] min-h-screen">
       <section className="w-full bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#762114] p-6 md:p-8">
-      <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Materiales</h2>
+        <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Materiales</h2>
 
-      {renderTabla("metal")}
-      {renderTabla("piedra")}
-      {renderTabla("hilo")}
+        {renderTabla("metal")}
+        {renderTabla("piedra")}
+        {renderTabla("hilo")}
 
-      <div className="bg-white p-4 rounded shadow-md border mt-6">
-        <h3 className="text-lg font-semibold text-[#7B2710] mb-2">
-          {modoEdicion ? "Editar Material" : "Agregar Material"}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select 
-            name="tipo" 
-            value={formulario.tipo} 
-            onChange={manejarCambio}
-            className="p-2 border rounded normal-case"
-          >
-            <option value="metal" className="normal-case">Metal</option>
-            <option value="piedra" className="normal-case">Piedra</option>
-            <option value="hilo" className="normal-case">Hilo</option>
-          </select>
-
-          <input
-            name="nombre"
-            value={formulario.nombre}
-            onChange={manejarCambio}
-            className="p-2 border rounded"
-            placeholder="Nombre / Color"
-          />
-
-          <input
-            name="precio"
-            type="number"
-            value={formulario.precio}
-            onChange={manejarCambio}
-            className="p-2 border rounded"
-            placeholder="Precio x 10 gramos o 10 metros (hilo)"
-          />
-
-          <select
-            name="activar"
-            value={formulario.activar}
-            onChange={manejarCambio}
-            className="p-2 border rounded"
-          >
-            <option value="1">Activado</option>
-            <option value="0">Desactivado</option>
-          </select>
-
-          <input type="file" onChange={manejarArchivo} />
-        </div>
-
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={manejarGuardar}
-            disabled={loading}
-            className="bg-[#7B2710] text-white px-4 py-2 rounded hover:bg-[#5a1e0c]"
-          >
-            {modoEdicion ? "Guardar Cambios" : "Agregar"}
-          </button>
-
-          {modoEdicion && (
-            <button
-              onClick={manejarCancelar}
-              className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
+        <div className="bg-white p-4 rounded shadow-md border mt-6">
+          <h3 className="text-lg font-semibold text-[#7B2710] mb-2">
+            {modoEdicion ? "Editar Material" : "Agregar Material"}
+          </h3>
+          <div className="grid gap-6">
+            <select
+              name="tipo" 
+              value={formulario.tipo} 
+              onChange={manejarCambio}
+              className="p-2 border rounded normal-case h-10"
             >
-              Cancelar
+              <option value="metal" className="normal-case">Metal</option>
+              <option value="piedra" className="normal-case">Piedra</option>
+              <option value="hilo" className="normal-case">Hilo</option>
+            </select>
+
+            <div>
+              <input
+                name="nombre"
+                value={formulario.nombre}
+                onChange={manejarCambio}
+                className="p-2 border rounded w-full h-10"
+                placeholder="Nombre / Color"
+                maxLength={35}
+              />
+              <p className="text-xs text-gray-500 mt-1">Máximo 35 caracteres (solo letras, números y acentos)</p>
+            </div>
+
+            <div>
+              <input
+                name="precio"
+                type="text"
+                value={formulario.precio}
+                onChange={manejarCambio}
+                className="p-2 border rounded w-full h-10"
+                placeholder="Precio x 10 gramos o 10 metros (hilo)"
+              />
+              <p className="text-xs text-gray-500 mt-2">Solo números entre 0 y 5000</p>
+            </div>
+
+            <select
+              name="activar"
+              value={formulario.activar}
+              onChange={manejarCambio}
+              className="p-2 border rounded h-10"
+            >
+              <option value="1">Activado</option>
+              <option value="0">Desactivado</option>
+            </select>
+
+            <div className="md:col-span-2">
+              <input 
+                type="file" 
+                onChange={manejarArchivo} 
+                accept="image/jpeg, image/jpg, image/png, image/webp, image/gif"
+              />
+              {errorImagen && <p className="text-red-500 text-sm mt-1">{errorImagen}</p>}
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={manejarGuardar}
+              disabled={loading}
+              className="bg-[#7B2710] text-white px-4 py-2 rounded hover:bg-[#5a1e0c]"
+            >
+              {modoEdicion ? "Guardar Cambios" : "Agregar"}
             </button>
-          )}
+
+            {modoEdicion && (
+              <button
+                onClick={manejarCancelar}
+                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
-      </div>
       </section>
     </div>
-    
   );
 }

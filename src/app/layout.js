@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { Alex_Brush } from 'next/font/google';
 import './styles/globals.css';
 import { AuthProvider } from "@/components/AuthContext";
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,6 +33,25 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             {children}
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  style: {
+                    background: '#4BB543', // Verde para éxito
+                  },
+                },
+                error: {
+                  style: {
+                    background: '#FF3333', // Rojo para errores
+                  },
+                },
+              }}
+            />
           </CartProvider>
         </AuthProvider>
       </body>

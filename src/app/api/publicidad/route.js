@@ -21,21 +21,23 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// ✅ PUT para subir imágenes/video + enlaces
 export async function PUT(req) {
   try {
     const data = await req.formData();
     const archivos = {};
     const enlaces = {};
+    const activaciones = {};
+    const fechasInicio = {};
+    const fechasFin = {};
 
-    // Separamos archivos y enlaces
+    // Procesar datos del formulario
     for (const key of data.keys()) {
       const valor = data.get(key);
 
-      if (valor && valor.name) {
+      if (valor instanceof Blob && valor.name) {
         // Es un archivo
         const buffer = Buffer.from(await valor.arrayBuffer());
-
+        
         await new Promise((resolve, reject) => {
           const upload = cloudinary.uploader.upload_stream(
             {
@@ -56,103 +58,153 @@ export async function PUT(req) {
           );
           upload.end(buffer);
         });
-      } else {
-        // Es un texto (enlace)
+      } else if (key.startsWith('activar')) {
+        // Simplificado: Convertir a 1 o 0 directamente
+        activaciones[key] = valor === '1' ? 1 : 0;
+      } else if (key.startsWith('fechaInicio')) {
+        fechasInicio[key] = valor || null;
+      } else if (key.startsWith('fechaFin')) {
+        fechasFin[key] = valor || null;
+      } else if (key.startsWith('enlace')) {
         enlaces[key] = valor;
       }
     }
 
-    await guardarEnDB(archivos, enlaces);
+    await guardarEnDB(archivos, enlaces, activaciones, fechasInicio, fechasFin);
+    return NextResponse.json({ mensaje: "Publicidad actualizada correctamente", success: true });
 
-    return NextResponse.json({ mensaje: "Archivos y enlaces subidos" });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Error al subir contenido" }, { status: 500 });
+    console.error("Error en PUT:", err);
+    return NextResponse.json(
+      { error: "Error al actualizar la publicidad", details: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ Función para insertar tipo, url y enlace
-async function guardarEnDB(archivos, enlaces) {
+async function guardarEnDB(archivos, enlaces, activaciones, fechasInicio, fechasFin) {
   const conn = await pool.getConnection();
   try {
-    // 1. Procesar archivos subidos (como lo haces actualmente)
+    await conn.beginTransaction();
+
+    // 1. Procesar archivos subidos (imágenes y video)
     for (const key of Object.keys(archivos)) {
       const { tipo, url } = archivos[key];
-      let enlace = null;
-
-      if (key.startsWith("imagen")) {
-        const num = key.replace("imagen", "");
-        enlace = enlaces[`enlace${num}`] || null;
-      }
-      if (key === "video") {
-        enlace = enlaces["enlaceVideo"] || null;
-      }
-
       const id = key === "video" ? 6 : parseInt(key.replace("imagen", ""), 10);
+      
+      const num = key === "video" ? "Video" : key.replace("imagen", "");
+      const campoPrefijo = key === "video" ? "" : num;
+      
+      const enlace = enlaces[`enlace${campoPrefijo}`] || null;
+      const activar = activaciones[`activar${campoPrefijo}`] ?? 0;
+      const fechaInicio = fechasInicio[`fechaInicio${campoPrefijo}`] || null;
+      const fechaFin = fechasFin[`fechaFin${campoPrefijo}`] || null;
 
       const [existente] = await conn.query("SELECT id FROM publicidad WHERE id = ?", [id]);
 
       if (existente.length > 0) {
         await conn.query(
-          "UPDATE publicidad SET tipo = ?, url = ?, enlace = ? WHERE id = ?",
-          [tipo, url, enlace, id]
+          `UPDATE publicidad SET 
+            tipo = ?, 
+            url = ?, 
+            enlace = ?, 
+            activar = ?, 
+            fechaInicio = ?, 
+            fechaFin = ? 
+          WHERE id = ?`,
+          [tipo, url, enlace, activar, fechaInicio, fechaFin, id]
         );
       } else {
         await conn.query(
-          "INSERT INTO publicidad (id, tipo, url, enlace) VALUES (?, ?, ?, ?)",
-          [id, tipo, url, enlace]
+          `INSERT INTO publicidad 
+            (id, tipo, url, enlace, activar, fechaInicio, fechaFin) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [id, tipo, url, enlace, activar, fechaInicio, fechaFin]
         );
       }
     }
 
     // 2. Procesar enlaces sin archivos nuevos
     for (const key of Object.keys(enlaces)) {
-      // Solo procesar enlaces de imágenes (enlace1, enlace2, etc.) y enlaceVideo
       if (key.startsWith("enlace")) {
-        let id, tipo;
+        const num = key === "enlaceVideo" ? "Video" : key.replace("enlace", "");
+        const id = key === "enlaceVideo" ? 6 : parseInt(num, 10);
+        const tipo = key === "enlaceVideo" ? "video" : "imagen";
         
-        if (key === "enlaceVideo") {
-          id = 6;
-          tipo = "video";
-        } else {
-          const num = key.replace("enlace", "");
-          id = parseInt(num, 10);
-          tipo = "imagen";
-        }
-
         const enlace = enlaces[key] || null;
+        const activar = activaciones[`activar${num}`] ?? 0;
+        const fechaInicio = fechasInicio[`fechaInicio${num}`] || null;
+        const fechaFin = fechasFin[`fechaFin${num}`] || null;
 
         const [existente] = await conn.query("SELECT id FROM publicidad WHERE id = ?", [id]);
 
         if (existente.length > 0) {
-          // Solo actualizamos el enlace, mantenemos tipo y url existentes
           await conn.query(
-            "UPDATE publicidad SET enlace = ? WHERE id = ?",
-            [enlace, id]
+            `UPDATE publicidad SET 
+              enlace = ?, 
+              activar = ?, 
+              fechaInicio = ?, 
+              fechaFin = ? 
+            WHERE id = ?`,
+            [enlace, activar, fechaInicio, fechaFin, id]
           );
         } else {
-          // Si no existe el registro, insertamos con url null (se debería subir una imagen después)
           await conn.query(
-            "INSERT INTO publicidad (id, tipo, url, enlace) VALUES (?, ?, NULL, ?)",
-            [id, tipo, enlace]
+            `INSERT INTO publicidad 
+              (id, tipo, url, enlace, activar, fechaInicio, fechaFin) 
+            VALUES (?, ?, NULL, ?, ?, ?, ?)`,
+            [id, tipo, enlace, activar, fechaInicio, fechaFin]
           );
         }
       }
     }
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    console.error("Error en guardarEnDB:", err);
+    throw err;
   } finally {
     conn.release();
   }
 }
 
-// ✅ GET para mostrar publicidad actual
-export async function GET() {
+export async function GET(req) {
   const conn = await pool.getConnection();
   try {
-    const [rows] = await conn.query("SELECT tipo, url, enlace FROM publicidad");
+    const { searchParams } = new URL(req.url);
+    const esAdmin = searchParams.get("admin") === "1";
+
+    let query = `
+      SELECT 
+        id, 
+        tipo, 
+        url, 
+        enlace, 
+        activar, 
+        DATE_FORMAT(fechaInicio, '%Y-%m-%d') as fechaInicio,
+        DATE_FORMAT(fechaFin, '%Y-%m-%d') as fechaFin
+      FROM publicidad
+    `;
+
+    if (!esAdmin) {
+      query += `
+        WHERE activar = 1 
+        AND (fechaInicio IS NULL OR fechaInicio <= CURDATE())
+        AND (fechaFin IS NULL OR fechaFin >= CURDATE())
+      `;
+    }
+
+    query += " ORDER BY id";
+
+    const [rows] = await conn.query(query);
     return NextResponse.json(rows);
   } catch (err) {
-    console.error("Error al obtener publicidad:", err);
-    return NextResponse.json({ error: "Error al obtener la publicidad" }, { status: 500 });
+    console.error("Error en GET:", err);
+    return NextResponse.json(
+      { error: "Error al obtener publicidad" },
+      { status: 500 }
+    );
   } finally {
     conn.release();
   }

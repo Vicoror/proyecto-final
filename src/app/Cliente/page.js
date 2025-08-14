@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { FiHome } from "react-icons/fi";
 import { useRouter } from 'next/navigation';
-import IconoCarrito from "@/components/IconoCarrito";
 import { HiLogout } from "react-icons/hi";
+import NavCliente from "@/components/NavCliente";
+import DatosFormulario from "@/components/DatosFormulario";
+import { useAuth } from "@/components/AuthContext";
+
 
 const menuItems = [
   { 
@@ -49,6 +52,7 @@ export default function ClientePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
+  const {logout } = useAuth(); 
   const [profileData, setProfileData] = useState({
     nombre: "",
     apellidos: "",
@@ -76,9 +80,16 @@ export default function ClientePage() {
     router.back();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      logout(); // Limpiar contexto de autenticación
+      localStorage.removeItem('authToken'); // Limpiar token
+      localStorage.removeItem('user'); // Limpiar datos de usuario (si existen)
+      router.push('/'); // Redirigir al home
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   useEffect(() => {
@@ -170,10 +181,13 @@ export default function ClientePage() {
   }
 
   return (
+    <div><NavCliente />
     <div
+    
       className="min-h-screen bg-cover bg-center p-4 sm:p-6 relative"
       style={{ backgroundImage: "url('/fondo.png')" }}
     >
+      
       <div className="absolute inset-0 bg-black opacity-50"></div>
       <div className="relative z-10 max-w-4xl mx-auto bg-[#F5F1F1] p-4 sm:p-6 rounded-lg shadow-lg border-4 border-[#762114]">
         <div className="flex flex-col sm:flex-row items-center mb-4">
@@ -182,9 +196,6 @@ export default function ClientePage() {
             <FiHome />
           </a>
           <h1 className="text-2xl sm:text-4xl font-serif text-[#7B2710] text-center">Bienvenid@, {user.nombre}!</h1>
-        </div>
-        <div className="absolute top-4 right-4 z-50 text-[#7B2710] hover:text-[#DC9C5C]">
-          <IconoCarrito />
         </div>
         <p className="text-base sm:text-lg text-[#7B2710] mb-4 sm:mb-0">Correo: {user.correo}</p>
         
@@ -248,127 +259,7 @@ export default function ClientePage() {
               <div>
                 <h2 className="text-2xl font-serif text-[#7B2710] mb-4">Mi Perfil</h2>
                 
-                <div className="mb-6">
-                  <h3 className="text-xl font-serif text-[#7B2710] mb-2">Mis Datos</h3>
-                  <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[#7B2710] mb-1">Nombre</label>
-                      <input
-                        type="text"
-                        name="nombre"
-                        value={profileData.nombre}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-[#DC9C5C] rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[#7B2710] mb-1">Apellidos</label>
-                      <input
-                        type="text"
-                        name="apellidos"
-                        value={profileData.apellidos}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-[#DC9C5C] rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[#7B2710] mb-1">Correo</label>
-                      <input
-                        type="email"
-                        name="correo"
-                        value={profileData.correo}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-[#DC9C5C] rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[#7B2710] mb-1">Teléfono Celular</label>
-                      <input
-                        type="tel"
-                        name="telefonoCelular"
-                        value={profileData.telefonoCelular}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-[#DC9C5C] rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[#7B2710] mb-1">Otro Teléfono</label>
-                      <input
-                        type="tel"
-                        name="otroTelefono"
-                        value={profileData.otroTelefono}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-[#DC9C5C] rounded"
-                      />
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <h4 className="text-lg font-serif text-[#7B2710] mb-2">Dirección</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-[#7B2710] mb-1">Calle</label>
-                          <input
-                            type="text"
-                            name="direccion.calle"
-                            value={profileData.direccion.calle}
-                            onChange={handleProfileChange}
-                            className="w-full p-2 border border-[#DC9C5C] rounded"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#7B2710] mb-1">Número Exterior</label>
-                          <input
-                            type="text"
-                            name="direccion.numeroExterior"
-                            value={profileData.direccion.numeroExterior}
-                            onChange={handleProfileChange}
-                            className="w-full p-2 border border-[#DC9C5C] rounded"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#7B2710] mb-1">Número Interior</label>
-                          <input
-                            type="text"
-                            name="direccion.numeroInterior"
-                            value={profileData.direccion.numeroInterior}
-                            onChange={handleProfileChange}
-                            className="w-full p-2 border border-[#DC9C5C] rounded"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#7B2710] mb-1">Colonia</label>
-                          <input
-                            type="text"
-                            name="direccion.colonia"
-                            value={profileData.direccion.colonia}
-                            onChange={handleProfileChange}
-                            className="w-full p-2 border border-[#DC9C5C] rounded"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#7B2710] mb-1">Código Postal</label>
-                          <input
-                            type="text"
-                            name="direccion.codigoPostal"
-                            value={profileData.direccion.codigoPostal}
-                            onChange={handleProfileChange}
-                            className="w-full p-2 border border-[#DC9C5C] rounded"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="md:col-span-2 mt-4">
-                      <button
-                        type="button"
-                        onClick={saveProfileChanges}
-                        className="bg-[#7B2710] text-white px-4 py-2 rounded hover:bg-[#5a1d0c] transition-colors"
-                      >
-                        Guardar Cambios
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                <DatosFormulario/>
                 
                 <div>
                   <button
@@ -496,7 +387,9 @@ export default function ClientePage() {
           <HiLogout className="text-xl mr-2 font-bold" />
           <span>Cerrar sesión</span>
         </button>
+    
       </div>
+    </div>
     </div>
   );
 }

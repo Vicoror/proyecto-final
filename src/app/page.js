@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiUser, FiShoppingBag, FiMenu, FiX, FiArrowRight } from "react-icons/fi";
+import { FiX, FiArrowRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import Publicidad from "@/components/Publicidad";
 import VerProducto from "@/components/verProducto";
 import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
-import IconoCarrito from "@/components/IconoCarrito";
+import NavCliente from "@/components/NavCliente";
 
 
 
@@ -31,7 +31,6 @@ const truncateText = (text, maxLength) => {
 
 export default function Home() {
   const [anuncios, setAnuncios] = useState([]);
-  const [anuncioIndex, setAnuncioIndex] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
   const [isButtonGlowing, setIsButtonGlowing] = useState(false);
@@ -48,19 +47,7 @@ export default function Home() {
   setMostrarModal(true);
 };
 
-  useEffect(() => {
-    const fetchAnuncios = async () => {
-      try {
-        const res = await fetch('/api/anuncios');
-        const data = await res.json();
-        const activos = data.filter((a) => a.activo);
-        setAnuncios(activos);
-      } catch (error) {
-        console.error("Error cargando anuncios", error);
-      }
-    };
-    fetchAnuncios();
-  }, []);
+
 
     useEffect(() => {
       const obtenerPublicidad = async () => {
@@ -115,13 +102,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [anuncios]);
 
-  const scrollToSection = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setIsMenuOpen(false);
-  };
-
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
   const handlePersonalizarClick = () => {
     setIsButtonGlowing(true);
     setTimeout(() => {
@@ -137,70 +117,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F1F1] text-[#762114] relative">
-      {/* Barra de anuncios */}
-      <motion.div
-        className="w-full py-2 text-center fixed top-0 z-50 text-[#F5F1F1]"
-        style={{ backgroundColor: "rgba(140, 149, 96, 0.75)", backdropFilter: "blur(5px)" }}
-        animate={{ opacity: [0, 1], x: [-50, 0] }}
-        transition={{ duration: 0.5 }}
-      >
-        <p className="text-xs sm:text-sm px-2 truncate">{anuncios[anuncioIndex]?.titulo}</p>
-      </motion.div>
-
-      <header className="p-4 pt-14 md:p-5 flex flex-col md:flex-row md:justify-between md:items-center">
-          <div className="flex justify-between items-center w-full md:w-auto">
-            {windowWidth <= 768 && (
-              <button onClick={toggleMenu} className="text-2xl text-[#8C9560]">
-                <FiMenu />
-              </button>
-            )}
-
-            <div className="text-center pt-0 sm:pt-12">
-              <h1
-                className="text-3xl sm:text-5xl md:text-6xl lg:text-5xl font-bold"
-                style={{ fontFamily: "Alex Brush" }}
-              >
-                Bernarda Sierra
-              </h1>
-              <h2 className="text-lg sm:text-xl text-[#DC9C5C] mt-1">
-                Joyería artesanal
-              </h2>
-            </div>
-
-            {/* Íconos en móvil */}
-            <div className="flex items-center justify-end space-x-3 text-xl md:hidden text-[#8C9560]">
-              <Link href="/login" className="hover:text-[#DC9C5C]">
-                <FiUser className="text-2xl" />
-              </Link>
-              <div className="hover:text-[#DC9C5C]">
-                <IconoCarrito />
-              </div>
-            </div>
-          </div>
-
-          {/* Íconos en escritorio */}
-          <div className="hidden md:flex items-center space-x-4 text-xl text-[#8C9560] hover:text-[#DC9C5C]">
-            <div className="relative group">
-            <Link 
-            href="/login" 
-            className="text-[#8C9560] hover:text-[#DC9C5C]">
-              <FiUser className="text-2xl" />
-            </Link>
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-              Iniciar sesión
-            </div>
-            </div>
-            <div className="flex items-center text-[#8C9560] hover:text-[#DC9C5C]">
-              <IconoCarrito />
-            </div>
-          </div>
-        </header>
-
+   
+    <div className="min-h-screen bg-[#F5F1F1] text-[#762114] reltive">
+    
+    <NavCliente />
+  
 
       {/* Navegación desktop */}
+      
       {windowWidth > 768 && (
-        <nav className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 mt-4 text-sm sm:text-base md:text-lg font-semibold border-y border-[#8C956060] py-2 px-2">
+        <nav className=" flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 mt-4 text-sm sm:text-base md:text-lg font-semibold border-y border-[#8C956060] py-2 px-2">
           {categorias.map((categoria) => (
             <button
               key={categoria}
@@ -211,34 +137,6 @@ export default function Home() {
             </button>
           ))}
         </nav>
-      )}
-
-      {/* Menú móvil */}
-      {windowWidth <= 768 && isMenuOpen && (
-        <motion.div
-          className="fixed top-0 left-0 h-full w-[80%] max-w-[300px] bg-[#F5F1F1] shadow-xl z-50 p-4"
-          initial={{ x: '-100%' }}
-          animate={{ x: 0 }}
-          transition={{ type: 'tween', ease: 'easeInOut' }}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold">Categorías</h3>
-            <button onClick={toggleMenu} className="text-2xl text-[#8C9560]">
-              <FiX />
-            </button>
-          </div>
-          <div className="flex flex-col space-y-3 text-base font-medium">
-            {categorias.map((categoria) => (
-              <button
-                key={categoria}
-                onClick={() => scrollToSection(categoria)}
-                className="hover:text-[#DC9C5C] text-left py-2"
-              >
-                {categoria}
-              </button>
-            ))}
-          </div>
-        </motion.div>
       )}
 
         <main className="p-4">

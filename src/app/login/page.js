@@ -46,6 +46,8 @@ export default function LoginPage() {
       const result = await response.json();
       login(result.user);
 
+      localStorage.setItem("user", JSON.stringify(result.user));
+      
       alert("Inicio de sesión exitoso!");
 
       // Redirecciona según el rol del usuario
@@ -94,8 +96,11 @@ export default function LoginPage() {
         {/* Mostrar error si lo hay */}
         {error && <p className="text-red-600 font-bold mt-2 text-sm md:text-base">{error}</p>}
 
-        {/* Formulario de login */}
-        <form onSubmit={handleLogin} className="mt-4">
+         {/* Formulario de login */}
+
+       <form onSubmit={handleLogin} className="mt-4">
+          {error && <p className="text-red-500 mb-2">{error}</p>}
+
           <input
             type="email"
             placeholder="Correo"
@@ -113,7 +118,6 @@ export default function LoginPage() {
             required
           />
 
-          {/* CAPTCHA aquí */}
           <Captcha onVerify={(token) => setCaptchaToken(token)} />
 
           <button
@@ -124,6 +128,7 @@ export default function LoginPage() {
             {loading ? "Cargando..." : "Entrar"}
           </button>
         </form>
+
 
         {/* Botón de registro */}
         <p className="text-xs md:text-sm text-[#8C9560] font-serif mt-4">¿No te has registrado?</p>

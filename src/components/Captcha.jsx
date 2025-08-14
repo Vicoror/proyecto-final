@@ -2,7 +2,7 @@
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useRef, useEffect, useState } from 'react';
 
-export default function Captcha({ onVerify }) {
+export default function Captcha({ onVerify, onError }) {
   const recaptchaRef = useRef();
   const [recaptchaSize, setRecaptchaSize] = useState('normal');
 
@@ -18,7 +18,18 @@ export default function Captcha({ onVerify }) {
   }, []);
 
   const handleChange = (token) => {
-    onVerify(token);
+    if (token) {
+      onVerify(token);
+    } else {
+      // Si hay un error (token es null), recargamos el reCAPTCHA
+      recaptchaRef.current.reset();
+      if (onError) onError();
+    }
+  };
+
+  const handleExpired = () => {
+    recaptchaRef.current.reset();
+    if (onError) onError();
   };
 
   return (
@@ -26,8 +37,10 @@ export default function Captcha({ onVerify }) {
       <div className="w-full flex justify-center">
         <div className="my-4 flex justify-center overflow-x-auto">
           <ReCAPTCHA
-            sitekey="6LfapWYrAAAAAPWUOXoPQJv5Gxxj2u7O4n234Z3T"
+            ref={recaptchaRef}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
             onChange={handleChange}
+            onExpired={handleExpired}
             size={recaptchaSize}
             className="mx-auto scale-90 md:scale-100"
           />
