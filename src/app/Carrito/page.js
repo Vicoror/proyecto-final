@@ -16,7 +16,7 @@ const VerCarrito = () => {
   const { cartItems, updateQuantity, removeItem, clearCart } = useCart();
   const router = useRouter();
   const [confirmClear, setConfirmClear] = useState(false);
-  const { isLoggedIn, loading } = useAuth();
+  const { isLoggedIn, loading, userId, userEmail, userName } = useAuth();
   const [envioSeleccionado, setEnvioSeleccionado] = useState(null);
   const [mostrarResumenCompra, setMostrarResumenCompra] = useState(false);
   const [mostrarFormularioPago, setMostrarFormularioPago] = useState(false);
@@ -42,7 +42,7 @@ const VerCarrito = () => {
   }, [subtotal, envioSeleccionado]);
 
   // Luego usar el useEffect que depende de total
- useEffect(() => {
+  useEffect(() => {
     const createPaymentIntent = async () => {
       if (!mostrarFormularioPago || total <= 0) return;
 
@@ -89,7 +89,7 @@ const VerCarrito = () => {
   const handleConfirmarCompra = () => {
     setMostrarResumenCompra(false);
     setMostrarFormularioPago(true);
-    //setClientSecret(""); // Resetear para forzar nueva creación
+    setClientSecret("");
   };
 
   const handleVolverAlCarrito = () => {
@@ -228,22 +228,19 @@ const VerCarrito = () => {
             <p>Cargando métodos de pago...</p>
           </div>
         ) : (
-          <Elements 
-            stripe={stripePromise} 
-            options={{
-              clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorPrimary: '#762114',
-                }
-              }
-            }}
-          >
-            <PagoForm
-              
-            />
-          </Elements>
+          
+           <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <PagoForm 
+        total={total}
+        cartItems={cartItems}
+        envioSeleccionado={envioSeleccionado}
+        subtotal={subtotal}
+        userId={userId}           // ← Pasar el id_cliente
+        userEmail={userEmail}
+        userName={userName}
+        
+      />
+    </Elements>
         )}
       </div>
     );

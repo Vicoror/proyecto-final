@@ -105,7 +105,8 @@ export async function GET(request) {
 // Actualizar perfil del usuario
 export async function PUT(request) {
   // En un caso real, deberías obtener el ID del usuario autenticado
-  const userId = 1; // Reemplazar con lógica de autenticación real
+  const userId = getUserIdFromHeaders(request);
+
 
   try {
     const data = await request.json();
@@ -128,6 +129,7 @@ export async function PUT(request) {
       );
 
       if (existingDir.length > 0) {
+        const idDireccion = existingDir[0].id_direccion;
         await connection.execute(
           `UPDATE direccion SET 
            calle = ?, numExt = ?, numInt = ?, colonia = ?, codPostal = ?,
@@ -172,17 +174,18 @@ export async function PUT(request) {
 
       // Actualizar o insertar teléfono principal
       const principalPhone = existingPhones.find(p => p.telefono_principal);
-      if (principalPhone) {
-        await connection.execute(
-          'UPDATE telefonos_usuario SET telefono_principal = ? WHERE id_telefono = ?',
-          [telefonos.principal, principalPhone.id_telefono]
-        );
-      } else {
-        await connection.execute(
-          'INSERT INTO telefonos_usuario (id_cliente, telefono_principal, lada_principal) VALUES (?, ?, "52")',
-          [userId, telefonos.principal]
-        );
-      }
+          if (principalPhone) {
+            await connection.execute(
+              'UPDATE telefonos_usuario SET telefono_principal = ? WHERE id_telefono = ?',
+              [telefonos.principal, principalPhone.id_telefono]
+            );
+          } else if (telefonos.principal) {
+            await connection.execute(
+              'INSERT INTO telefonos_usuario (id_cliente, telefono_principal, lada_principal) VALUES (?, ?, "52")',
+              [userId, telefonos.principal]
+            );
+          }
+
 
       // Actualizar o insertar teléfono secundario
       if (telefonos.secundario) {

@@ -10,29 +10,29 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
-  try {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      if (parsedUser && parsedUser.email) {
-        setUser(parsedUser);
-        setIsLoggedIn(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && parsedUser.correo) { // Cambié email por correo
+          setUser(parsedUser);
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
       } else {
         setIsLoggedIn(false);
       }
-    } else {
+    } catch (error) {
+      console.error("Error leyendo usuario del localStorage:", error);
       setIsLoggedIn(false);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error leyendo usuario del localStorage:", error);
-    setIsLoggedIn(false);
-  } finally {
-    setLoading(false); // importante
-  }
-}, []);
-
+  }, []);
 
   const login = (userData) => {
+    // Asegúrate de que userData incluya id_cliente
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
     setIsLoggedIn(true);
@@ -45,7 +45,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isLoggedIn, 
+      user, 
+      login, 
+      logout,
+      loading,
+      userId: user?.id_cliente,     // ← Nuevo: ID del cliente
+      userEmail: user?.correo,      // ← Nuevo: email
+      userName: user?.nombre        // ← Nuevo: nombre
+    }}>
       {children}
     </AuthContext.Provider>
   );

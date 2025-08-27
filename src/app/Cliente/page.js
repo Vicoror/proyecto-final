@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { FiHome } from "react-icons/fi";
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { HiLogout } from "react-icons/hi";
 import NavCliente from "@/components/NavCliente";
 import DatosFormulario from "@/components/DatosFormulario";
 import { useAuth } from "@/components/AuthContext";
+import ListaPedidosUsuario  from "@/components/ListaPedidosUsuario";
 
 
 const menuItems = [
@@ -53,6 +54,7 @@ export default function ClientePage() {
   const [user, setUser] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
   const {logout } = useAuth(); 
+  const params = useParams();
   const [profileData, setProfileData] = useState({
     nombre: "",
     apellidos: "",
@@ -227,31 +229,8 @@ export default function ClientePage() {
             {activeMenu === "purchases" && (
               <div>
                 <h2 className="text-2xl font-serif text-[#7B2710] mb-4">Mis Compras</h2>
-                {samplePurchases.map((purchase, index) => (
-                  <div key={index} className="mb-6 p-4 border-b border-[#DC9C5C]">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
-                        <img src={purchase.image} alt={purchase.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p><span className="font-bold">Folio:</span> {purchase.folio}</p>
-                        <p><span className="font-bold">Fecha:</span> {purchase.date}</p>
-                        <p><span className="font-bold">Artículo:</span> {purchase.name}</p>
-                        <p><span className="font-bold">Total:</span> ${purchase.total.toFixed(2)}</p>
-                        <p>
-                          <span className="font-bold">Estado:</span> 
-                          <span className={`ml-2 px-2 py-1 rounded ${
-                            purchase.status === "En proceso" ? "bg-yellow-200 text-yellow-800" :
-                            purchase.status === "Enviado" ? "bg-blue-200 text-blue-800" :
-                            "bg-green-200 text-green-800"
-                          }`}>
-                            {purchase.status}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+
+                             <ListaPedidosUsuario idCliente={user?.id_cliente} />
               </div>
             )}
             

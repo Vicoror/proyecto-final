@@ -5,6 +5,7 @@ import { Alex_Brush } from 'next/font/google';
 import './styles/globals.css';
 import { AuthProvider } from "@/components/AuthContext";
 import { Toaster } from 'react-hot-toast';
+import WhatsAppChatWidget from '@/components/WhatsAppChatWidget';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -52,6 +53,7 @@ export default function RootLayout({ children }) {
                 },
               }}
             />
+            <WhatsAppChatWidget />
           </CartProvider>
         </AuthProvider>
       </body>

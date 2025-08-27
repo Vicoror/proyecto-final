@@ -10,6 +10,8 @@ export async function POST(req) {
   try {
     const { amount } = await req.json(); // 💰 Monto en centavos
 
+     console.log("Monto recibido desde el frontend:", amount);
+
     // Validación del monto
     if (!amount || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json(
@@ -28,6 +30,7 @@ export async function POST(req) {
     // Respuesta clara para el frontend
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
+      id: paymentIntent.id
     });
   } catch (error) {
     console.error('Error creando PaymentIntent:', error);

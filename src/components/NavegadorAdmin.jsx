@@ -8,9 +8,9 @@ import { useAuth } from "@/components/AuthContext";
 const menuItems = [
   { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Stock"] },
   { title: "Publicidad", submenu: ["Editar Anuncios", "Editar Publicidad"] },
-  { title: "Envios", submenu: ["Gestión de envios", "Seguimiento de envios"] },
-  { title: "Pedidos", submenu: ["Editar status de pedidos"] },
-  { title: "Gestión de clientes", submenu: ["Datos de clientes", "Editar clientes"] },
+  { title: "Envios", submenu: ["Gestión de envios"] },
+  { title: "Pedidos", submenu: ["Gestión de pedidos"] },
+  { title: "Gestión de clientes", submenu: ["Gestión de clientes"] },
   { title: "Reportes", submenu: ["Reportes", "Métricas", "Ventas", "Chat"] },
 ];
 
@@ -49,9 +49,8 @@ export default function NavegadorAdmin() {
       "Editar Anuncios": "/Publicidad/EditarAnuncios",
       "Editar Publicidad": "/Publicidad/EditarPublicidad",
       "Gestión de envios": "/gestionEnvios",
-      "Editar status de pedidos": "/Pedidos",
-      "Datos de clientes": "/gestionClientes/DatosClientes",
-      "Editar clientes": "/gestionClientes/EditarClientes",
+      "Gestión de pedidos": "/GestionPedidos",
+      "Gestión de clientes": "/gestionClientes/GestionClientes",
       "Reportes": "/Reportes",
       "Métricas": "/Reportes/Metricas",
       "Ventas": "/Reportes/Ventas",

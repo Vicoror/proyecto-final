@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from "react-hot-toast";
 import { useAuth } from '@/components/AuthContext';
 
-const PerfilUsuario = () => {
+const PerfilUsuario = ({ onValidChange }) => {
   const { user, loading } = useAuth();
   const [profileData, setProfileData] = useState({
     nombre: '',
@@ -31,7 +31,23 @@ const PerfilUsuario = () => {
   const userId = user?.id_cliente ?? null;
   
   
+ useEffect(() => {
+    const hasErrors = Object.keys(errors).length > 0;
+    const hasEmptyRequired =
+      !profileData.nombre ||
+      !profileData.apellidos ||
+      !profileData.correo ||
+      !profileData.telefonos.principal ||
+      !profileData.direccion.calle ||
+      !profileData.direccion.numExt ||
+      !profileData.direccion.colonia ||
+      !profileData.direccion.codPostal ||
+      !profileData.direccion.municipio ||
+      !profileData.direccion.estado;
 
+    const isValid = !hasErrors && !hasEmptyRequired;
+    onValidChange?.(isValid);
+  }, [errors, profileData, onValidChange]);
   // Cargar datos del usuario al montar el componente
  useEffect(() => {
   if (loading) return;
@@ -59,161 +75,175 @@ const PerfilUsuario = () => {
     fetchUserData();
   }, [loading, user]); // 👈 depende de loading y user
 
-  // Validaciones de campos
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
-    
-    switch (name) {
-      case 'nombre':
-        case 'apellidos':
-        // Eliminar cualquier carácter que no sea letra o acento
-        const cleanedValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, ' ');
-        
-        if (cleanedValue.length < 2 || cleanedValue.length > 35) {
-            newErrors[name] = 'Debe tener entre 2 y 35 letras (sin caracteres especiales)';
-        } else if (value !== cleanedValue) {
-            // Si el valor original difiere del limpiado, mostrar error y autocorregir
-            newErrors[name] = 'Solo se permiten letras y acentos';
-            // Autocorrección (opcional)
-            if (name === 'nombre') {
-            setProfileData(prev => ({...prev, nombre: cleanedValue}));
-            } else {
-            setProfileData(prev => ({...prev, apellidos: cleanedValue}));
-            }
-        } else {
-            delete newErrors[name];
-        }
-        break;
-      
-      case 'correo':
-            // Limpiar el valor (opcional, solo si necesitas filtrar caracteres)
-            const cleanedEmail = value.slice(0, 50); // Cortar a 50 caracteres máximo
-            
-            if (cleanedEmail.length > 50) {
-                newErrors[name] = 'El correo no puede exceder 50 caracteres';
-                // Opcional: Autocorregir el valor
-                if (name === 'correo') {
-                setProfileData(prev => ({...prev, correo: cleanedEmail}));
-                }
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanedEmail)) {
-                newErrors[name] = 'Correo electrónico inválido';
-            } else {
-                delete newErrors[name];
-            }
-            break;
-                
-      case 'telefonos.principal':
-      case 'telefonos.secundario':
-        if (value && !/^[0-9]{10}$/.test(value)) {
-          newErrors[name] = 'Debe tener 10 dígitos';
-        } else {
-          delete newErrors[name];
-        }
-        break;
-      
-      case 'direccion.calle':
-      case 'direccion.colonia':
-      case 'direccion.municipio':
-      case 'direccion.estado':
-        if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.,#-]{3,100}$/.test(value)) {
-          newErrors[name] = 'Caracteres inválidos (3-100 caracteres)';
-        } else {
-          delete newErrors[name];
-        }
-        break;
-      
-      case 'direccion.numExt':
-        if (!/^[a-zA-Z0-9\s-]{1,10}$/.test(value)) {
-          newErrors[name] = 'Máximo 10 caracteres alfanuméricos';
-        } else {
-          delete newErrors[name];
-        }
-        break;
-      
-      case 'direccion.numInt':
-        if (value && !/^[a-zA-Z0-9\s-]{1,10}$/.test(value)) {
-          newErrors[name] = 'Máximo 10 caracteres alfanuméricos';
-        } else {
-          delete newErrors[name];
-        }
-        break;
-      
-      case 'direccion.codPostal':
-        if (!/^[0-9]{5}$/.test(value)) {
-          newErrors[name] = 'Debe tener 5 dígitos';
-        } else {
-          delete newErrors[name];
-        }
-        break;
-      
-      default:
-        break;
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+ const validateField = (name, value) => {
+  const newErrors = { ...errors };
 
-  // Manejar cambios en los inputs
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name.startsWith('direccion.')) {
-      const field = name.split('.')[1];
-      setProfileData(prev => ({
-        ...prev,
-        direccion: {
-          ...prev.direccion,
-          [field]: value
-        }
-      }));
-      validateField(name, value);
-    } else if (name.startsWith('telefonos.')) {
-      const field = name.split('.')[1];
-      setProfileData(prev => ({
-        ...prev,
-        telefonos: {
-          ...prev.telefonos,
-          [field]: value
-        }
-      }));
-      validateField(name, value);
-    } else {
-      setProfileData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-      validateField(name, value);
-    }
-  };
-    // Guardar cambios
-    const saveProfileChanges = async () => {
-    // Validar todos los campos antes de enviar
-    const isValid = Object.entries(profileData).every(([key, value]) => {
-        if (typeof value === 'object') {
-        return Object.entries(value).every(([subKey, subValue]) => {
-            return validateField(`${key}.${subKey}`, subValue);
-        });
-        }
-        return validateField(key, value);
-    });
-    
-    if (!isValid) {
-        toast.error('Por favor corrige los errores antes de guardar');
-        return;
-    }
-    
-    try {
-        setIsLoading(true);
-        await axios.put('/api/datosFormulario', profileData);
-        toast.success('Datos guardados correctamente');
-    } catch (error) {
-        console.error('Error al guardar:', error);
-        toast.error('Error al guardar los cambios');
-    } finally {
-        setIsLoading(false);
-    }
+  // Eliminar espacios al inicio y final
+      const trimmedValue = value.trim();
+
+      switch (name) {
+        case 'nombre':
+        case 'apellidos':
+          const cleanedValue = trimmedValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, ' ');
+          
+          if (cleanedValue.length < 2 || cleanedValue.length > 35) {
+            newErrors[name] = 'Debe tener entre 2 y 35 letras (sin caracteres especiales)';
+          } else if (value !== cleanedValue) {
+            newErrors[name] = 'Solo se permiten letras y acentos';
+            setProfileData(prev => ({
+              ...prev,
+              [name]: cleanedValue
+            }));
+          } else if (trimmedValue === '') {
+            newErrors[name] = 'Este campo no puede estar vacío o solo con espacios';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        case 'correo':
+          const cleanedEmail = trimmedValue.slice(0, 50);
+
+          if (cleanedEmail.length > 50) {
+            newErrors[name] = 'El correo no puede exceder 50 caracteres';
+            setProfileData(prev => ({ ...prev, correo: cleanedEmail }));
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanedEmail)) {
+            newErrors[name] = 'Correo electrónico inválido';
+          } else if (trimmedValue === '') {
+            newErrors[name] = 'Este campo no puede estar vacío';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        case 'telefonos.principal':
+        case 'telefonos.secundario':
+          if (trimmedValue && !/^[0-9]{10}$/.test(trimmedValue)) {
+            newErrors[name] = 'Debe tener 10 dígitos';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        case 'direccion.calle':
+        case 'direccion.colonia':
+        case 'direccion.municipio':
+        case 'direccion.estado':
+          if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.,#-]{3,100}$/.test(trimmedValue)) {
+            newErrors[name] = 'Caracteres inválidos';
+          } else if (trimmedValue === '') {
+            newErrors[name] = 'Este campo no puede estar vacío';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        case 'direccion.numExt':
+        case 'direccion.numInt':
+          if (!/^[a-zA-Z0-9\s-]{1,10}$/.test(trimmedValue)) {
+            newErrors[name] = 'Máximo 10 caracteres alfanuméricos';
+          } else if (trimmedValue === '') {
+            newErrors[name] = 'Este campo no puede estar vacío';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        case 'direccion.codPostal':
+          if (!/^[0-9]{5}$/.test(trimmedValue)) {
+            newErrors[name] = 'Debe tener 5 dígitos';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+          case 'direccion.infAdicional':
+          const trimmedValue = value.trim();
+          if (trimmedValue && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.,#-]{1,100}$/.test(trimmedValue)) {
+            newErrors[name] = 'Caracteres inválidos (solo letras, números y signos básicos)';
+          } else {
+            delete newErrors[name];
+          }
+          break;
+
+        default:
+          break;
+          
+      }
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     };
+
+  const handleProfileChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name.startsWith('direccion.')) {
+    const field = name.split('.')[1];
+    setProfileData(prev => ({
+      ...prev,
+      direccion: {
+        ...prev.direccion,
+        [field]: value
+      }
+    }));
+    validateField(name, value);
+  } else if (name.startsWith('telefonos.')) {
+    const field = name.split('.')[1];
+    setProfileData(prev => ({
+      ...prev,
+      telefonos: {
+        ...prev.telefonos,
+        [field]: value
+      }
+    }));
+    validateField(name, value);
+  } else {
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    validateField(name, value);
+  }
+};
+
+ const saveProfileChanges = async () => {
+  // Validar todos los campos antes de enviar
+  const isValid = Object.entries(profileData).every(([key, value]) => {
+    if (typeof value === 'object') {
+      return Object.entries(value).every(([subKey, subValue]) => {
+        return validateField(`${key}.${subKey}`, subValue);
+      });
+    }
+    return validateField(key, value);
+  });
+
+  if (!isValid) {
+    toast.error('Por favor llena adecuadamente los campos antes de guardar');
+    return;
+  }
+
+  if (!user || !user.id_cliente) {   // ⚠️ Validación de usuario
+    toast.error('No hay usuario autenticado');
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    await axios.put('/api/datosFormulario', profileData, {
+      headers: {
+        'x-user-id': user.id_cliente,  // ⚠️ Aquí envías el ID
+      },
+    });
+    toast.success('Datos guardados correctamente');
+  } catch (error) {
+    console.error('Error al guardar:', error);
+    toast.error('Error al guardar los cambios');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="mb-6">
@@ -444,7 +474,7 @@ const PerfilUsuario = () => {
                 className="w-full p-2 border border-[#DC9C5C] rounded"
                 rows={3}
                 maxLength={100}
-              />
+              />  {errors['direccion.infAdicional'] && <p className="text-red-500 text-sm">{errors['direccion.infAdicional']}</p>}
             </div>
           </div>
         </div>
