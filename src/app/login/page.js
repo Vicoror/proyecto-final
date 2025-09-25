@@ -199,7 +199,13 @@ export default function LoginPage() {
             required
           />
 
-          <Captcha onVerify={(token) => setCaptchaToken(token)} />
+         <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="origin-top-left scale-90 sm:scale-100">
+            <Captcha onVerify={(token) => setCaptchaToken(token)} />
+          </div>
+        </div>
+
+
 
           <button
             type="submit"

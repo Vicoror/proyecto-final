@@ -30,6 +30,21 @@ const ProductosComponent = () => {
   const [activeCategory, setActiveCategory] = useState(null);
   const pathname = usePathname(); // Obtiene la ruta actual
   const isHome = pathname === '/'; // Solo es la página principal
+  const headerRef = useRef(null);
+  const anunciosRef = useRef(null);
+  const [contentPadding, setContentPadding] = useState(0);
+
+  useEffect(() => {
+  const updatePadding = () => {
+    const headerHeight = headerRef.current?.offsetHeight || 0;
+    const anunciosHeight = anunciosRef.current?.offsetHeight || 0;
+    setContentPadding(headerHeight + anunciosHeight + 10); // +10px de respiro
+  };
+
+  updatePadding();
+  window.addEventListener("resize", updatePadding);
+  return () => window.removeEventListener("resize", updatePadding);
+}, []);
 
   // Resize
   useEffect(() => {
@@ -199,6 +214,7 @@ const ProductosComponent = () => {
     <div className="bg-[#F5F1F1]">
       {/* 🔔 Barra de anuncios */}
       <motion.div
+        ref={anunciosRef}
         className="w-full py-2 text-center fixed top-0 z-50 text-[#F5F1F1]"
         style={{ backgroundColor: "rgba(140, 149, 96, 0.75)", backdropFilter: "blur(5px)" }}
         animate={{ opacity: [0, 1], x: [-50, 0] }}
@@ -208,7 +224,9 @@ const ProductosComponent = () => {
       </motion.div>
 
       {/* 🔝 Header */}
-      <header className="fixed top-8 left-0 right-0 z-40 bg-[#F5F1F1] shadow-sm pt-2 pb-2 px-4">
+      <header
+       ref={headerRef}
+       className="fixed top-8 left-0 right-0 z-40 bg-[#F5F1F1] shadow-sm pt-2 pb-2 px-4">
   <div className="flex items-center justify-between w-full gap-2 flex-wrap">
     {/* Menú hamburguesa */}
     {isHome && windowWidth <= 768 && (
@@ -438,7 +456,10 @@ const ProductosComponent = () => {
 
 
       {/* 📦 Contenido principal */}
-      <main className="pt-29 pb-0 px-4">
+      <main  style={{
+          paddingTop: window.innerWidth < 768 ? `${contentPadding}px` : "130px", // fijo en desktop
+        }}
+        className="pt-20 pb-0 px-4">
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
         {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>}
         {isLoading ? (

@@ -199,7 +199,7 @@ export async function POST(request) {
     }
 
     // Crear enlace de restablecimiento
-    const resetLink = `${process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'}/login/restablecer-contrasena?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetLink = `${process.env.NEXTAUTH_URL || process.env.APP_URL || 'https://proyecto-final-zeta-ten.vercel.app/'}/login/restablecer-contrasena?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
     const mailOptions = {
       from: `"Soporte Bernarda" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
