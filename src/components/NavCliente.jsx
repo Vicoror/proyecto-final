@@ -33,6 +33,7 @@ const ProductosComponent = () => {
   const headerRef = useRef(null);
   const anunciosRef = useRef(null);
   const [contentPadding, setContentPadding] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
   const updatePadding = () => {
@@ -41,10 +42,10 @@ const ProductosComponent = () => {
     setContentPadding(headerHeight + anunciosHeight + 10); // +10px de respiro
   };
 
-  updatePadding();
-  window.addEventListener("resize", updatePadding);
-  return () => window.removeEventListener("resize", updatePadding);
-}, []);
+    updatePadding();
+    window.addEventListener("resize", updatePadding);
+    return () => window.removeEventListener("resize", updatePadding);
+  }, []);
 
   // Resize
   useEffect(() => {
@@ -53,6 +54,13 @@ const ProductosComponent = () => {
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+  const checkScreen = () => setIsMobile(window.innerWidth < 768);
+  checkScreen(); // checar en el primer render (ya en cliente)
+  window.addEventListener("resize", checkScreen);
+  return () => window.removeEventListener("resize", checkScreen);
+}, []);
 
   // Mantener sesión
   useEffect(() => {
@@ -456,8 +464,9 @@ const ProductosComponent = () => {
 
 
       {/* 📦 Contenido principal */}
-      <main  style={{
-          paddingTop: window.innerWidth < 768 ? `${contentPadding}px` : "130px", // fijo en desktop
+      <main
+        style={{
+          paddingTop: isMobile ? `${contentPadding}px` : "130px", // dinámico en móvil, fijo en desktop
         }}
         className="pt-20 pb-0 px-4">
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
