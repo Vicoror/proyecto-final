@@ -29,6 +29,7 @@ export default function ReportesPage() {
   const [mostrarTodo, setMostrarTodo] = useState(false);
   const [loading, setLoading] = useState(false);
   const reporteRef = useRef(null);
+  const [mostrarTabla, setMostrarTabla] = useState(false);
 
       // Calcular el total de ventas
     // Calcular el total de ventas
@@ -138,7 +139,7 @@ const descargarPDF = async () => {
         </div>
 
         {/* Sección de reportes */}
-        <section className="w-full max-w-6xl mx-auto bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#7B2710] p-4 md:p-6 lg:p-8">
+        <section className="w-full bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#762114] p-6 md:p-8">
           <h2 className="text-2xl md:text-3xl font-bold text-[#7B2710] mb-6 text-center">Reportes</h2>
 
           {/* Filtros */}
@@ -245,7 +246,7 @@ const descargarPDF = async () => {
                   <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">Top Productos Vendidos</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.topProductos} margin={{ top: 5, right: 20, left: 0, bottom: 30 }}>
+                      <BarChart data={data.topProductos.slice(0, 10)} margin={{ top: 5, right: 20, left: 0, bottom: 30 }}>
                         <XAxis dataKey="nombre_producto" angle={-45} textAnchor="end" height={70} />
                         <YAxis />
                         <Tooltip />
@@ -298,60 +299,140 @@ const descargarPDF = async () => {
                 </div>
 
                 {/* 4. Ganancias por producto */}
-                <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">Ganancias por Producto</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={data.ganancias} margin={{ top: 5, right: 20, left: 0, bottom: 30 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="nombre_producto" angle={-45} textAnchor="end" height={70} />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`$${value}`, 'Ganancia']} />
-                        <Line type="monotone" dataKey="total" stroke="#66BB6A" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                        <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">
+                          Ganancias por Producto
+                        </h3>
 
+                        {/* Contenedor del gráfico */}
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={data.ganancias.slice(0, 12)}
+                              margin={{ top: 5, right: 20, left: 0, bottom: 30 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="nombre_producto"
+                                angle={-45}
+                                textAnchor="end"
+                                height={70}
+                              />
+                              <YAxis />
+                              <Tooltip formatter={(value) => [`$${value}`, "Ganancia"]} />
+                              <Line
+                                type="monotone"
+                                dataKey="total"
+                                stroke="#66BB6A"
+                                strokeWidth={2}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* Botón para abrir modal */}
+                        <div className="text-center mt-4">
+                          <button
+                            onClick={() => setMostrarTabla(true)}
+                            className="px-4 py-2 bg-[#7B2710] text-white rounded-lg hover:bg-[#5a1d0b] transition"
+                          >
+                            Ver Tabla Completa
+                          </button>
+                        </div>
+
+                        {/* Modal de la tabla */}
+                        {mostrarTabla && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-[#7B2710] bg-opacity-50 z-50">
+                      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 mx-2 
+                                      overflow-y-auto max-h-[90vh] relative">
+                        <button
+                          onClick={() => setMostrarTabla(false)}
+                          className="absolute top-2 right-2 text-gray-600 hover:text-red-600"
+                        >
+                          ✖
+                        </button>
+                        <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">
+                          Tabla Completa de Ganancias
+                        </h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border-collapse border border-gray-200">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="border border-gray-200 px-4 py-2 text-sm">Producto</th>
+                                <th className="border border-gray-200 px-4 py-2 text-sm">Ganancia</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.ganancias.map((item, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="border border-gray-200 px-4 py-2 text-sm">{item.nombre_producto}</td>
+                                  <td className="border border-gray-200 px-4 py-2 text-sm">${item.total}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  </div>
                 {/* 5. Tipo de envío */}
-               <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+              <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
   <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">Tipo de Envío</h3>
   <div className="h-64">
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
-        <Pie 
-          data={data.tipoEnvio} 
-          dataKey="cantidad" 
-          nameKey="tipo_envio" 
-          cx="50%" 
-          cy="50%" 
-          outerRadius={80} 
-          // Eliminar etiquetas del gráfico y mostrarlas solo en la leyenda
-          label={false}
-        >
-          {data.tipoEnvio.map((entry, index) => (
-            <Cell key={index} fill={COLORS[index % COLORS.length]} />
-          ))}
+          <Pie 
+            data={data.tipoEnvio} 
+            dataKey="cantidad" 
+            nameKey="tipo_envio" 
+            cx="50%" 
+            cy="50%" 
+            outerRadius={80} 
+            labelLine={true} // 👈 línea conectora
+            label={({ cx, cy, midAngle, outerRadius, percent, name, index }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = outerRadius * 1.3; // distancia fuera de la gráfica
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+              // Cortar texto en 25 caracteres y dividir en 2 líneas
+              const text = name.slice(0, 40);
+              const firstLine = text.slice(0, 30);
+              const secondLine = text.slice(30,40);
+
+              return (
+                <text 
+                  x={x} 
+                  y={y} 
+                  fill={COLORS[index % COLORS.length]} 
+                  textAnchor={x > cx ? "start" : "end"} 
+                  dominantBaseline="central"
+                  fontSize="13"
+                  
+                >
+                  <tspan x={x} dy="-1.5em">{firstLine}</tspan>
+                  {secondLine && <tspan x={x} dy="1.2em">{secondLine}</tspan>}
+                  <tspan x={x} dy="1.2em">{`${(percent * 100).toFixed(0)}%`}</tspan>
+                </text>
+              );
+            }}
+          >
+            {data.tipoEnvio.map((entry, index) => (
+              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            ))}
         </Pie>
-       <Tooltip 
-          formatter={(value, name, props) => {
-            // Calcular el total para obtener el porcentaje
-            const total = data.tipoEnvio.reduce((sum, item) => sum + item.cantidad, 0);
-            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
-            return [`${value} (${percentage}%)`, props.payload.tipo_envio];
-          }} 
-        />
-        <Legend 
-          formatter={(value, entry, index) => {
-            const total = data.tipoEnvio.reduce((sum, item) => sum + item.cantidad, 0);
-            const percentage = ((data.tipoEnvio[index].cantidad / total) * 100).toFixed(1);
-            return `${value}: ${percentage}%`;
-          }}
-        />
+
+        {/* Tooltip que sigue mostrando valor y nombre completo */}
+        <Tooltip formatter={(value, name, props) => [`${value}`, props.payload.tipo_envio]} />
+        
+        {/* No hay Legend para que no aparezcan cuadros de colores abajo */}
       </PieChart>
     </ResponsiveContainer>
   </div>
 </div>
+
 
                 {/* 6. Empresas de envío */}
                 <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
