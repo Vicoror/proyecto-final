@@ -341,41 +341,44 @@ const descargarPDF = async () => {
                         </div>
 
                         {/* Modal de la tabla */}
-                        {mostrarTabla && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-[#7B2710] bg-opacity-50 z-50">
-                      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 mx-2 
-                                      overflow-y-auto max-h-[90vh] relative">
-                        <button
-                          onClick={() => setMostrarTabla(false)}
-                          className="absolute top-2 right-2 text-gray-600 hover:text-red-600"
-                        >
-                          ✖
-                        </button>
-                        <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">
-                          Tabla Completa de Ganancias
-                        </h3>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full border-collapse border border-gray-200">
-                            <thead>
-                              <tr className="bg-gray-100">
-                                <th className="border border-gray-200 px-4 py-2 text-sm">Producto</th>
-                                <th className="border border-gray-200 px-4 py-2 text-sm">Ganancia</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {data.ganancias.map((item, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
-                                  <td className="border border-gray-200 px-4 py-2 text-sm">{item.nombre_producto}</td>
-                                  <td className="border border-gray-200 px-4 py-2 text-sm">${item.total}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                       {mostrarTabla && (
+                        <div className="fixed inset-0 flex items-start justify-center bg-[#7B2710] bg-opacity-50 z-50">
+                          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 mx-2
+                                          overflow-hidden max-h-[80vh] relative mt-24">
+                            <button
+                              onClick={() => setMostrarTabla(false)}
+                              className="absolute top-2 right-2 text-gray-600 hover:text-red-600"
+                            >
+                              ✖
+                            </button>
+                            <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">
+                              Tabla Completa de Ganancias
+                            </h3>
+                            <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+                              <table className="min-w-full border-collapse border border-gray-200">
+                                <thead>
+                                  <tr className="bg-gray-100">
+                                    <th className="border border-gray-200 px-4 py-2 text-sm">Producto</th>
+                                    <th className="border border-gray-200 px-4 py-2 text-sm">Ganancia</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {data.ganancias.map((item, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                      <td className="border border-gray-200 px-4 py-2 text-sm">
+                                        {item.nombre_producto}
+                                      </td>
+                                      <td className="border border-gray-200 px-4 py-2 text-sm">
+                                        ${item.total}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  )}
-
+                      )}
                   </div>
                 {/* 5. Tipo de envío */}
               <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
@@ -398,9 +401,9 @@ const descargarPDF = async () => {
               const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
               // Cortar texto en 25 caracteres y dividir en 2 líneas
-              const text = name.slice(0, 40);
+              const text = name.slice(0, 36);
               const firstLine = text.slice(0, 30);
-              const secondLine = text.slice(30,40);
+              const secondLine = text.slice(30, 36);
 
               return (
                 <text 
