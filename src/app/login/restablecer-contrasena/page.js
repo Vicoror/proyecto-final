@@ -1,10 +1,11 @@
-'use client'
-
+'use client';
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function RestablecerContrasena() {
+// Componente principal que usa useSearchParams
+function RestablecerContrasenaContent() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -318,5 +319,21 @@ export default function RestablecerContrasena() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Componente principal que envuelve en Suspense
+export default function RestablecerContrasena() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-8"
+           style={{ backgroundImage: "url('/fondo.png')" }}>
+        <div className="bg-[#F5F1F1] p-8 rounded-2xl shadow-lg w-full max-w-md border-4 border-[#762114] text-center">
+          <p>Cargando...</p>
+        </div>
+      </div>
+    }>
+      <RestablecerContrasenaContent />
+    </Suspense>
   )
 }
