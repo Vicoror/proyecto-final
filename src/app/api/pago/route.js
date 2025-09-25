@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 export async function POST(req) {
   try {
-    const { amount } = await req.json(); // 💰 Monto en centavos
+    const { amount, userEmail } = await req.json(); // 💰 Monto en centavos
 
      console.log("Monto recibido desde el frontend:", amount);
 
@@ -25,6 +25,7 @@ export async function POST(req) {
         amount,
         currency: "mxn",
         payment_method_types: ["card", "oxxo"], // 🔹 OXXO incluido
+        receipt_email: userEmail, 
     });
 
     // Respuesta clara para el frontend

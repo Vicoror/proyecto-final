@@ -32,6 +32,7 @@ export async function GET(request) {
         categoria,
         imagen,
         activo,
+        activar_botn,
         DATE_FORMAT(fecha_creacion, '%Y-%m-%d %H:%i:%s') AS fecha_creacion
       FROM productos
       WHERE 1 = 1
@@ -91,7 +92,7 @@ export async function GET(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, stock, activo } = body;
+    const { id, stock, activo, precio, activar_botn } = body;
 
     if (!id) {
       return new Response(JSON.stringify({
@@ -114,6 +115,16 @@ export async function PUT(request) {
     if (activo !== undefined) {
       fields.push('activo = ?');
       values.push(activo);
+    }
+
+    if (precio !== undefined) {
+      fields.push('precio = ?');
+      values.push(precio);
+    }
+
+    if (activar_botn !== undefined) {
+      fields.push('activar_botn = ?');
+      values.push(activar_botn);
     }
 
     if (fields.length === 0) {

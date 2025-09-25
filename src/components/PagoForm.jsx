@@ -277,7 +277,7 @@ export default function PagoForm(props) {
         const res = await fetch("/api/pago", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: amountInCents }),
+          body: JSON.stringify({ amount: amountInCents, userEmail }),
         });
         
         if (!res.ok) {

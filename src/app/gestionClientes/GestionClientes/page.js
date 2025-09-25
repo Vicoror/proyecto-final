@@ -139,7 +139,7 @@ export default function GestionUsuarios() {
 
         {/* Sección de gestión de usuarios */}
         <section className="w-full bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#762114] p-4 md:p-8">
-          <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Gestión de Usuarios</h2>
+          <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Gestión de Clientes</h2>
           
           {/* Buscador */}
           <div className="relative mb-6">
@@ -151,7 +151,15 @@ export default function GestionUsuarios() {
               placeholder="Buscar por correo electrónico"
               className="w-full pl-10 pr-4 py-2 border border-[#8C9560] rounded-lg focus:ring-2 focus:ring-[#DC9C5C] focus:border-[#DC9C5C]"
               value={terminoBusqueda}
-              onChange={(e) => setTerminoBusqueda(e.target.value)}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (
+                    valor.length <= 20 &&
+                    /^[a-zA-Z0-9\s@.]*$/.test(valor)
+                  ) {
+                    setTerminoBusqueda(valor);
+                  }
+                }}
             />
           </div>
 

@@ -24,6 +24,10 @@ const VerCarrito = () => {
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
   const [mostrarModalExito, setMostrarModalExito] = useState(false);
+  // Estados para términos y condiciones
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [mostrarTerminos, setMostrarTerminos] = useState(false);
+  const [terminosTexto, setTerminosTexto] = useState("");
 
   // 2. Cálculos independientes
   const { subtotal, totalItems } = useMemo(() => ({
@@ -67,6 +71,18 @@ const VerCarrito = () => {
     createPaymentIntent();
   }, [total, mostrarFormularioPago]);
 
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch("/api/whatsapp-config", { cache: "no-store" });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data = await res.json();
+      setTerminosTexto(data?.terminos || ""); // <-- solo el texto de términos
+    } catch (err) {
+      console.error("Error cargando términos:", err);
+    }
+  })();
+}, []);
 
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -100,7 +116,8 @@ const VerCarrito = () => {
   // Carrito vacío
   if (cartItems.length === 0 && !paymentSuccess) {
     return (
-      <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
+      <div className="fixed inset-0 z-50 flex justify-end  bg-[radial-gradient(circle,rgba(220,156,92,0.2)_0%,rgba(220,156,92,0.7)_100%)]">
+        <div className="w-[400px] bg-[#F5F1F1] shadow-lg p-4 overflow-y-auto transition-all">
         <div className="flex justify-between items-center">
           <Link href="/">
             <span className="text-[#762114] hover:underline cursor-pointer">
@@ -116,83 +133,142 @@ const VerCarrito = () => {
               Ver productos
             </button>
           </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   // Resumen de compra
-  if (mostrarResumenCompra) {
-    return (
-      <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
-        <div className="flex justify-between items-center">
-          <button
-            onClick={handleVolverAlCarrito}
-            className="text-[#762114] hover:underline cursor-pointer"
-          >
-            ← Volver al carrito
-          </button>
-        </div>
+  if (mostrarResumenCompra) { return (
+  <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
+    <div className="flex justify-between items-center">
+      <button
+        onClick={handleVolverAlCarrito}
+        className="text-[#762114] hover:underline cursor-pointer"
+      >
+        ← Volver al carrito
+      </button>
+    </div>
 
-        <h2 className="text-lg font-bold text-[#762114] mt-6 mb-4">Resumen de tu compra</h2>
+    <h2 className="text-lg font-bold text-[#762114] mt-6 mb-4">
+      Resumen de tu compra
+    </h2>
 
-        <div className="space-y-4 mb-6">
-          {cartItems.map((item) => (
-            <div key={item.id} className="border-b py-3">
-              <div className="flex gap-3">
-                {item.image || item.imagen ? (
-                  <Image
-                    src={item.image || item.imagen}
-                    alt={item.name || item.nombre || "Producto"}
-                    width={80}
-                    height={60}
-                    className="rounded object-cover"
-                  />
-                ) : (
-                  <div className="w-15 h-15 bg-gray-200 rounded" />
-                )}
+    <div className="space-y-4 mb-6">
+      {cartItems.map((item) => (
+        <div key={item.id} className="border-b py-3">
+          <div className="flex gap-3">
+            {item.image || item.imagen ? (
+              <Image
+                src={item.image || item.imagen}
+                alt={item.name || item.nombre || "Producto"}
+                width={80}
+                height={60}
+                className="rounded object-cover"
+              />
+            ) : (
+              <div className="w-15 h-15 bg-gray-200 rounded" />
+            )}
 
-                <div className="flex-grow">
-                  <h3 className="font-semibold text-sm">{item.name || item.nombre}</h3>
-                  {item.talla && (
-                    <p className="text-xs text-gray-600">Talla: {item.talla}</p>
-                  )}
-                  <p className="text-xs text-gray-600">
-                    Cantidad: {item.quantity} × ${Number(item.precio || item.price || 0).toFixed(2)}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Subtotal: ${(Number(item.precio || item.price || 0) * item.quantity).toFixed(2)}
-                  </p>
-                </div>
-              </div>
+            <div className="flex-grow">
+              <h3 className="font-semibold text-sm">
+                {item.name || item.nombre}
+              </h3>
+              {item.talla && (
+                <p className="text-xs text-gray-600">Talla: {item.talla}</p>
+              )}
+              <p className="text-xs text-gray-600">
+                Cantidad: {item.quantity} × $
+                {Number(item.precio || item.price || 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-600">
+                Subtotal: $
+                {(
+                  (Number(item.precio || item.price || 0) || 0) * item.quantity
+                ).toFixed(2)}
+              </p>
             </div>
-          ))}
-        </div>
-
-        <div className="border-t pt-4">
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-600">Subtotal:</span>
-            <span className="font-medium">${subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-600">Envío ({envioSeleccionado.descripcion_envio}):</span>
-            <span className="font-medium">${precioEnvio.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-lg font-bold text-[#762114] mt-2">
-            <span>Total:</span>
-            <span>${total.toFixed(2)}</span>
           </div>
         </div>
+      ))}
+    </div>
 
-        <button
-          onClick={handleConfirmarCompra}
-          className="w-full py-2 rounded-lg bg-[#762114] text-white hover:bg-[#DC9C5C] font-semibold mt-6"
-        >
-          Confirmar y proceder al pago
-        </button>
+    <div className="border-t pt-4">
+      <div className="flex justify-between mb-2">
+        <span className="text-gray-600">Subtotal:</span>
+        <span className="font-medium">${subtotal.toFixed(2)}</span>
       </div>
-    );
-  }
+      <div className="flex justify-between mb-2">
+        <span className="text-gray-600">
+          Envío ({envioSeleccionado.descripcion_envio}):
+        </span>
+        <span className="font-medium">${precioEnvio.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between text-lg font-bold text-[#762114] mt-2">
+        <span>Total:</span>
+        <span>${total.toFixed(2)}</span>
+      </div>
+    </div>
+
+    {/* Checkbox términos */}
+    <div className="mt-4 flex items-start gap-2">
+      <input
+        type="checkbox"
+        id="terminos"
+        checked={aceptaTerminos}
+        onChange={(e) => setAceptaTerminos(e.target.checked)}
+        className="mt-1"
+      />
+      <label htmlFor="terminos" className="text-sm text-gray-700">
+        Acepto los{" "}
+        <button
+          type="button"
+          onClick={() => setMostrarTerminos(true)}
+          className="text-[#762114] underline hover:text-[#DC9C5C]"
+        >
+          Términos y condiciones
+        </button>
+      </label>
+    </div>
+
+    {/* Botón confirmar */}
+    <button
+      onClick={handleConfirmarCompra}
+      disabled={!aceptaTerminos || !envioSeleccionado} // <--- agregar envioSeleccionado
+      className={`w-full py-2 rounded-lg mt-6 font-semibold text-white ${
+        aceptaTerminos && envioSeleccionado
+          ? "bg-[#762114] hover:bg-[#DC9C5C] cursor-pointer"
+          : "bg-gray-400 cursor-not-allowed"
+      }`}
+    >
+      Confirmar y proceder al pago
+    </button>
+
+
+    {/* Modal de términos */}
+   {mostrarTerminos && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] px-4">
+    <div className="bg-white p-6 rounded-xl w-full max-w-3xl shadow-2xl flex flex-col">
+      <h3 className="text-xl font-bold text-[#762114] mb-4 text-center sm:text-left">
+        Términos y condiciones
+      </h3>
+      <div className="text-sm text-gray-700 max-h-[70vh] overflow-y-auto whitespace-pre-line leading-relaxed">
+        {terminosTexto}
+      </div>
+      <button
+        onClick={() => setMostrarTerminos(false)}
+        className="mt-6 px-6 py-3 bg-[#762114] text-white rounded-lg hover:bg-[#DC9C5C] self-center sm:self-end transition"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+)}
+
+  </div>
+)}
+
 
   // Formulario de pago
   if (mostrarFormularioPago) {
@@ -248,6 +324,7 @@ const VerCarrito = () => {
 
   // Vista normal del carrito
   return (
+
     <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
       <div className="flex justify-between items-center">
         <Link href="/">
@@ -484,6 +561,7 @@ const VerCarrito = () => {
         </button>
       </div>
     </div>
+
   );
 };
 

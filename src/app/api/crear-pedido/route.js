@@ -1,7 +1,7 @@
-// app/api/crear-pedido/route.js
 import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import Stripe from 'stripe';
+import nodemailer from 'nodemailer';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const dbConfig = {
@@ -12,67 +12,85 @@ const dbConfig = {
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
 };
 
-export async function POST(request) {
-  console.log('✅ POST recibido en /api/crear-pedido');
+// Nodemailer
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+  tls: { rejectUnauthorized: false },
+});
 
+// Función para formatear materiales legiblemente
+const formatMateriales = (materiales) => {
+  if (!materiales) return '';
+  let str = '';
+  for (const key of Object.keys(materiales)) {
+    const mat = materiales[key];
+    if (mat) {
+      str += `${key}: ${mat.nombre || mat.color || ''}\n`;
+    }
+  }
+  return str;
+};
+
+export async function POST(req) {
   try {
-    const body = await request.json();
-    const { 
-      paymentIntentId, 
-      cartItems = [], 
-      envioSeleccionado = {}, 
-      subtotal, 
-      total, 
-      userId  // ← id_cliente EXISTENTE
-    } = body;
+    const body = await req.json();
+    const { paymentIntentId, cartItems = [], envioSeleccionado = {}, subtotal, total, userId } = body;
 
-    // ✅ VALIDACIONES ESENCIALES
-    if (!paymentIntentId) {
-      return NextResponse.json({ success: false, error: 'paymentIntentId es requerido' }, { status: 400 });
+    if (!paymentIntentId || !cartItems.length || !userId) {
+      return NextResponse.json({ success: false, error: 'Datos incompletos' }, { status: 400 });
     }
 
-    if (!cartItems || cartItems.length === 0) {
-      return NextResponse.json({ success: false, error: 'El carrito está vacío' }, { status: 400 });
-    }
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'ID de cliente es requerido' }, { status: 400 });
-    }
-
-    // ✅ OBTENER MÉTODO DE PAGO REAL DESDE STRIPE
-    let metodoPago = 'card'; // Valor por defecto
-    
+    let metodoPago = 'card';
     try {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      console.log('PaymentIntent detalles:', {
-        id: paymentIntent.id,
-        status: paymentIntent.status,
-        payment_method: paymentIntent.payment_method,
-        payment_method_types: paymentIntent.payment_method_types
-      });
-
-      // Detectar método de pago real
       if (paymentIntent.payment_method) {
         const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
-        metodoPago = paymentMethod.type; // 'card' o 'oxxo'
-        console.log('Método de pago detectado:', metodoPago);
-      } else if (paymentIntent.payment_method_types && paymentIntent.payment_method_types.includes('oxxo')) {
+        metodoPago = paymentMethod.type;
+      } else if (paymentIntent.payment_method_types?.includes('oxxo')) {
         metodoPago = 'oxxo';
       }
-      
-    } catch (stripeError) {
-      console.warn('Error obteniendo detalles de Stripe, usando valor por defecto:', stripeError);
-      // Mantener el valor por defecto 'card'
+    } catch (e) {
+      console.warn('Stripe error:', e);
     }
 
     const connection = await mysql.createConnection(dbConfig);
 
-    // ✅ GENERAR CÓDIGO DE PEDIDO ÚNICO
+    // Obtener datos del cliente
+    const [userRows] = await connection.execute(
+      `SELECT id_cliente, nombre, apellidos, correo FROM crear_usuario WHERE id_cliente = ? LIMIT 1`,
+      [userId]
+    );
+    const user = userRows[0];
+    const userEmail = user ? user.correo : null;
+
+    // Dirección
+    const [direccionRows] = await connection.execute(
+      `SELECT * FROM direccion WHERE id_cliente = ? LIMIT 1`,
+      [userId]
+    );
+    const direccion = direccionRows[0] || {};
+    const direccionText = direccion
+      ? `${direccion.calle || ''} ${direccion.numExt || ''} ${direccion.numInt || ''}, ${direccion.colonia || ''}, ${direccion.municipio || ''}, ${direccion.estado || ''}, C.P. ${direccion.codPostal || ''}`
+      : 'No proporcionada';
+
+    // Teléfonos
+    const [telefonosRows] = await connection.execute(
+      `SELECT * FROM telefonos_usuario WHERE id_cliente = ?`,
+      [userId]
+    );
+    const telefonoText = telefonosRows.length
+      ? `Principal: ${telefonosRows[0].telefono_principal || 'N/A'}, Secundario: ${telefonosRows[0].telefono_secundario || 'N/A'}`
+      : 'No proporcionados';
+
     const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const codigoPedido = `PED-${fecha}-${randomNum}`;
 
-    // ✅ 1. INSERTAR EN TABLA PEDIDOS CON MÉTODO DE PAGO REAL
+    // Insertar pedido
     const [pedidoResult] = await connection.execute(
       `INSERT INTO pedidos 
        (codigo_pedido, payment_intent_id, id_cliente, id_envio, tipo_envio, precio_envio, estado, subtotal, total, metodo_pago) 
@@ -80,112 +98,155 @@ export async function POST(request) {
       [
         codigoPedido,
         paymentIntentId,
-        userId,  // ← id_cliente EXISTENTE
+        userId,
         envioSeleccionado.id_envio || null,
         envioSeleccionado.descripcion_envio || envioSeleccionado.tipo || 'Estándar',
         envioSeleccionado.precio_envio || 0,
         'en_proceso',
         subtotal || 0,
         total || 0,
-        metodoPago  // ← 'card' o 'oxxo' en lugar de 'stripe'
+        metodoPago
       ]
     );
-
     const pedidoId = pedidoResult.insertId;
-    console.log('Pedido principal creado ID:', pedidoId, 'Método pago:', metodoPago);
 
-    // ✅ 2. INSERTAR ITEMS EN PURCHASE_ITEMS (tu estructura exacta)
-    let itemsInsertados = 0;
+    // Insertar items
     for (const item of cartItems) {
-  try {
-    const tipoProducto = item.tipo === 'personalizado' ? 'personalizado' : 'normal';
-    const nombre = item.name || item.nombre || 'Producto';
-    const precio = item.price || item.precio || 0;
-    const cantidad = item.quantity || 1;
-    const itemSubtotal = precio * cantidad;
+      try {
+        const tipoProducto = item.tipo === 'personalizado' ? 'personalizado' : 'normal';
+        const nombre = item.name || item.nombre || 'Producto';
+        const precio = item.price || item.precio || 0;
+        const cantidad = item.quantity || 1;
+        const itemSubtotal = precio * cantidad;
 
-    // Preparar materiales para JSON (solo si es personalizado)
-    let materialesJSON = null;
-    if (item.tipo === 'personalizado' && item.materiales) {
-      materialesJSON = JSON.stringify(item.materiales);
-    }
+        let categoria = 'General';
+        if ((item.tipo === 'normal' || item.tipo === undefined) && item.id) {
+          const [producto] = await connection.execute(
+            `SELECT categoria FROM productos WHERE id_productos = ?`,
+            [item.id]
+          );
+          if (producto.length > 0) categoria = producto[0].categoria;
+        } else if (item.tipo === 'personalizado') {
+          categoria = item.categoria || 'Personalizado';
+        }
 
-    // Insertar en purchase_items
-    await connection.execute(
-      `INSERT INTO purchase_items 
-       (pedido_id, tipo_producto, nombre_producto, precio_unitario, cantidad, subtotal, categoria, imagen_principal, id_producto_normal, stock_original, id_producto_personalizado, tiempo_entrega_original, precio_mano_obra_original, materiales) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        pedidoId,
-        tipoProducto,
-        nombre,
-        precio,
-        cantidad,
-        itemSubtotal,
-        item.categoria || 'General',
-        item.imagen || item.image || '',
-        item.tipo === 'personalizado' ? null : item.id,  // id del producto normal
-        item.stock || null,
-        item.tipo === 'personalizado' ? item.id_ProPer || null : null,
-        item.tiempoEntrega || null,
-        item.PrecioManoObra || null,
-        materialesJSON
-      ]
-    );
+        let materialesJSON = null;
+        if (item.tipo === 'personalizado' && item.materiales) {
+          materialesJSON = JSON.stringify(item.materiales);
+        }
 
-    // ✅ Actualizar stock solo si es producto normal
-    if (tipoProducto === 'normal' && item.id) {
-      const [updateResult] = await connection.execute(
-        `UPDATE productos 
-         SET stock = stock - ? 
-         WHERE id_productos = ? AND stock >= ?`,
-        [cantidad, item.id, cantidad]
-      );
+        await connection.execute(
+          `INSERT INTO purchase_items 
+           (pedido_id, tipo_producto, nombre_producto, precio_unitario, cantidad, subtotal, categoria, imagen_principal, id_producto_normal, stock_original, id_producto_personalizado, tiempo_entrega_original, precio_mano_obra_original, materiales) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            pedidoId,
+            tipoProducto,
+            nombre,
+            precio,
+            cantidad,
+            itemSubtotal,
+            categoria,
+            item.imagen || item.image || '',
+            item.tipo === 'personalizado' ? null : item.id,
+            item.stock || null,
+            item.tipo === 'personalizado' ? item.id_ProPer || null : null,
+            item.tiempoEntrega || null,
+            item.PrecioManoObra || null,
+            materialesJSON
+          ]
+        );
 
-      if (updateResult.affectedRows > 0) {
-        console.log(`Stock actualizado para producto ${item.id}: -${cantidad}`);
-      } else {
-        console.warn(`⚠️ No se pudo actualizar stock para producto ${item.id} (stock insuficiente o no existe)`);
+        if (tipoProducto === 'normal' && item.id) {
+          await connection.execute(
+            `UPDATE productos SET stock = stock - ? WHERE id_productos = ? AND stock >= ?`,
+            [cantidad, item.id, cantidad]
+          );
+        }
+      } catch (itemError) {
+        console.error('Error insertando item:', itemError);
       }
     }
 
-    itemsInsertados++;
-    console.log('Item insertado:', nombre);
-
-  } catch (itemError) {
-    console.error('Error insertando item:', item, 'Error:', itemError);
-    // Continuar con los demás items
-  }
-}
+    // Correos de admins
+    const [admins] = await connection.execute(
+      `SELECT correo FROM crear_usuario WHERE rol = 'admin'`
+    );
+    const adminEmails = admins.map(a => a.correo);
 
     await connection.end();
 
-    // ✅ RESPONDER ÉXITO CON MÉTODO DE PAGO REAL
+    // Crear resumen HTML con materiales, dirección y teléfono
+    const itemsHTML = cartItems.map((i) => {
+      let materialesText = '';
+      if (i.materiales) {
+        materialesText = '<p><b>Materiales:</b><br>' + formatMateriales(i.materiales).replace(/\n/g,'<br>') + '</p>';
+      }
+      let imagenTag = '';
+      if (i.imagen || i.image) {
+        imagenTag = `<img src="${i.imagen || i.image}" alt="${i.nombre || i.name}" style="max-width:150px;"/>`;
+      }
+      return `<div style="margin-bottom:10px">
+                <p><b>${i.nombre || i.name}</b> x ${i.quantity || 1} → $${(i.price || i.precio) * (i.quantity || 1)}</p>
+                ${materialesText}
+                ${imagenTag}
+              </div>`;
+    }).join("");
+
+    const resumenHTML = `
+      <h2>Pedido ${codigoPedido}</h2>
+      <p><b>Cliente:</b> ${user.nombre} ${user.apellidos}</p>
+      <p><b>Correo:</b> ${userEmail}</p>
+      <p><b>Teléfonos:</b> ${telefonoText}</p>
+      <p><b>Dirección:</b> ${direccionText}</p>
+      <p><b>Método de pago:</b> ${metodoPago}</p>
+      <p><b>Tipo de envío:</b> ${envioSeleccionado.tipo || envioSeleccionado.descripcion_envio || 'Estándar'}</p>
+      <p><b>Precio de envío:</b> $${envioSeleccionado.precio_envio || 0}</p>
+      <p><b>Subtotal:</b> $${subtotal}</p>
+      <p><b>Total:</b> $${total}</p>
+      <h3>Artículos:</h3>
+      ${itemsHTML}
+    `;
+
+    // Correo cliente
+    if (userEmail) {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: userEmail,
+        subject: `Confirmación de tu pedido ${codigoPedido}`,
+        html: `<h2>¡Gracias por tu compra!</h2><p>Tu pedido ha sido procesado con éxito.</p>${resumenHTML}`,
+      });
+    }
+
+    // Correo admins
+    if (adminEmails.length > 0) {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: adminEmails,
+        subject: `Nuevo pedido recibido ${codigoPedido}`,
+        html: `<h2>Nuevo pedido recibido</h2><p>ID Cliente: ${userId}</p>${resumenHTML}`,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       pedido_id: pedidoId,
       codigo_pedido: codigoPedido,
       id_cliente: userId,
-      items_count: itemsInsertados,
-      total: total,
-      metodo_pago: metodoPago,  // ← Incluir el método real en la respuesta
-      message: 'Pedido creado exitosamente'
+      total,
+      metodo_pago: metodoPago,
+      message: 'Pedido creado y correos enviados'
     });
 
   } catch (error) {
     console.error('Error general en API:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error procesando el pedido',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
+      { success: false, error: 'Error procesando el pedido', details: error.message },
       { status: 500 }
     );
   }
 }
 
-// Manejar otros métodos HTTP
 export async function GET() {
   return NextResponse.json({ error: 'Método no permitido' }, { status: 405 });
 }

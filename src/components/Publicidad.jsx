@@ -26,12 +26,18 @@ export default function Publicidad({ items }) {
   };
 
   if (!isValid) {
-    return (
-      <div className="w-full text-center py-8 text-white bg-gray-800 rounded-xl">
-        No hay elementos de publicidad disponibles.
-      </div>
-    );
-  }
+  return (
+    <div className="flex flex-col items-center justify-center py-8 bg-[#8C9560] rounded-xl">
+      <img
+        src="/Logo.png"
+        alt="Logo"
+        className="w-16 h-16 mb-4 animate-pulse"
+      />
+      <p className="text-white text-lg font-semibold">Cargando...</p>
+    </div>
+  );
+}
+
 
   const actual = items[current];
 

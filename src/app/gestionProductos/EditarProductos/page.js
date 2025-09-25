@@ -301,7 +301,15 @@ export default function EditarProducto() {
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      if (
+                        valor.length <= 30 &&
+                        /^[a-zA-Z0-9\s-_]*$/.test(valor)
+                      ) {
+                        setSearchTerm(valor);
+                      }
+                    }}
                     placeholder="ID, nombre o descripción"
                     className="flex-1 p-2 border border-[#8C9560] rounded-md"
                   />

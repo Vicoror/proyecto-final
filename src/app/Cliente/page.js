@@ -8,6 +8,7 @@ import NavCliente from "@/components/NavCliente";
 import DatosFormulario from "@/components/DatosFormulario";
 import { useAuth } from "@/components/AuthContext";
 import ListaPedidosUsuario  from "@/components/ListaPedidosUsuario";
+import WhatsAppChatWidget from "@/components/WhatsAppChatWidget";
 
 
 const menuItems = [
@@ -53,8 +54,9 @@ export default function ClientePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
-  const {logout } = useAuth(); 
+  const { logout } = useAuth(); 
   const params = useParams();
+  const [whatsappConfig, setWhatsappConfig] = useState({ help: '' });
   const [profileData, setProfileData] = useState({
     nombre: "",
     apellidos: "",
@@ -76,6 +78,7 @@ export default function ClientePage() {
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false); // ← Agregar este estado
   const [message, setMessage] = useState("");
 
   const goBack = () => {
@@ -124,6 +127,12 @@ export default function ClientePage() {
     }
   }, [router]);
 
+  useEffect(() => {
+    fetch('/api/whatsapp-config')
+      .then(res => res.json())
+      .then(data => setWhatsappConfig(data));
+  }, []);
+
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     
@@ -160,22 +169,65 @@ export default function ClientePage() {
   };
 
   const savePasswordChanges = () => {
-    // Validación y lógica para cambiar contraseña
-    if (passwordData.new !== passwordData.confirm) {
+    const { current, new: newPass, confirm } = passwordData;
+
+    // Expresión regular: mínimo 8 caracteres, al menos una mayúscula, una minúscula, un número y un símbolo
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    // Validación de coincidencia
+    if (newPass !== confirm) {
       setMessage("Las contraseñas no coinciden");
       return;
     }
+
+    // Validación de seguridad
+    if (!passwordRegex.test(newPass)) {
+      setMessage("La contraseña debe tener mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y un símbolo");
+      return;
+    }
+
+    // Aquí iría la lógica para actualizar la contraseña en tu backend si es necesario
+
     setMessage("Contraseña cambiada correctamente");
     setTimeout(() => setMessage(""), 3000);
     setPasswordData({ current: "", new: "", confirm: "" });
     setShowPasswordForm(false);
   };
 
-  const confirmDeleteAccount = () => {
-    // Lógica para eliminar cuenta
-    setShowDeleteConfirmation(false);
-    handleLogout();
-    setMessage("Cuenta eliminada correctamente");
+  // FUNCIÓN CORREGIDA PARA ELIMINAR/INACTIVAR CUENTA
+  const confirmDeleteAccount = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const response = await fetch('/api/whatsapp-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id_cliente })
+        });
+        
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al eliminar la cuenta');
+      }
+
+      setMessage("Cuenta eliminada correctamente");
+      
+      // Esperar un momento antes de cerrar sesión
+      setTimeout(() => {
+        handleLogout();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error eliminando cuenta:', error);
+      setMessage('Error al eliminar la cuenta: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirmation(false);
+    }
   };
 
   if (!user) {
@@ -305,19 +357,24 @@ export default function ClientePage() {
             )}
             
             {activeMenu === "help" && (
-              <div>
-                <h2 className="text-2xl font-serif text-[#7B2710] mb-4">Ayuda</h2>
-                <p className="mb-4">¿Necesitas ayuda? Envíanos un mensaje:</p>
-                <a 
-                  href="https://wa.me/5211234567890" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  <img src="/whatsapp-icon.png" alt="WhatsApp" className="w-6 h-6 mr-2" />
-                  Enviar mensaje por WhatsApp
-                </a>
-              </div>
+                 <div>
+                    <h2 className="text-2xl font-serif text-[#7B2710] mb-4">Ayuda</h2>
+                    <p className="mb-4">¿Necesitas ayuda? Envíanos un mensaje:</p>
+
+                    <button
+                      onClick={() => document.querySelector("#whatsapp-widget-btn")?.click()}
+                      className="inline-flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      📲 Enviar mensaje por WhatsApp
+                    </button> 
+                    <br/><br/>
+                    <p className="mb-3">
+                      Escribe un correo a: {whatsappConfig.help}
+                    </p>
+
+                    <WhatsAppChatWidget />
+                  </div>
+
             )}
             
             {activeMenu === "delete" && (

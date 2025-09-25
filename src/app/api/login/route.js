@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
+import bcrypt from 'bcryptjs';
 
 // Función para verificar el CAPTCHA con Google reCAPTCHA
 async function verifyCaptcha(token) {
@@ -33,7 +34,7 @@ export async function POST(req) {
     }
     console.log("Captcha válido");
 
-    // Conectar a la base de datos (local o remota)
+    // Conectar a la base de datos
     db = await mysql.createConnection({
       host: "ballast.proxy.rlwy.net",
       user: "root",
@@ -42,30 +43,60 @@ export async function POST(req) {
       port: 11561,
     });
 
-    // Buscar usuario en la base de datos
-    const [rows] = await db.execute(
-      "SELECT id_cliente, nombre, correo, rol FROM crear_usuario WHERE correo = ? AND contraseña = ?",
-      [email, password]
+    // ✅ MODIFICADO: Incluir el campo activar_usuario en la consulta
+    const [users] = await db.execute(
+      "SELECT id_cliente, nombre, correo, contraseña, rol, activar_usuario FROM crear_usuario WHERE correo = ?",
+      [email]
     );
+
+    // Verificar si el usuario existe
+    if (users.length === 0) {
+      await db.end();
+      return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 });
+    }
+
+    const user = users[0];
+
+    // ✅ CORREGIDO: Comparar contraseña con bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.contraseña);
+    
+    if (!isPasswordValid) {
+      await db.end();
+      return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 });
+    }
+
+    // ✅ NUEVO: Verificar si la cuenta está inactiva
+    if (user.activar_usuario === 0) {
+      await db.end();
+      return NextResponse.json({ 
+        error: "Cuenta inactiva",
+        cuentaInactiva: true,
+        userId: user.id_cliente
+      }, { status: 403 });
+    }
 
     // Cerrar la conexión
     await db.end();
 
-    // Validar si las credenciales son correctas
-    if (rows.length === 0) {
-      return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 });
-    }
+    // ✅ Enviar respuesta exitosa (sin enviar la contraseña)
+    const userWithoutPassword = {
+      id_cliente: user.id_cliente,
+      nombre: user.nombre,
+      correo: user.correo,
+      rol: user.rol
+    };
 
-    const user = rows[0]; // Extraer datos del usuario
-
-    // Enviar respuesta con datos del usuario (sin contraseña)
     return NextResponse.json(
-      { message: "Inicio de sesión exitoso", user },
+      { 
+        message: "Inicio de sesión exitoso", 
+        user: userWithoutPassword 
+      },
       { status: 200 }
     );
 
   } catch (error) {
-    if (db) await db.end(); // Asegurarse de cerrar la conexión
+    if (db) await db.end();
+    console.error("Error en login:", error);
     return NextResponse.json(
       { error: "Error en el servidor: " + error.message },
       { status: 500 }

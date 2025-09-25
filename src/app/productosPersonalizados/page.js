@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiUser, FiHome } from "react-icons/fi";
+import { FiUser, FiHome, FiChevronDown, FiCheck, FiX } from "react-icons/fi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
 import IconoCarrito from "@/components/IconoCarrito";
-
 
 export default function PersonalizarJoyas() {
   const router = useRouter();
@@ -24,6 +23,7 @@ export default function PersonalizarJoyas() {
     hilo: null
   });
   const [precioTotal, setPrecioTotal] = useState(0);
+  const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
   // Carga modelos al iniciar
   useEffect(() => {
@@ -59,15 +59,12 @@ export default function PersonalizarJoyas() {
   useEffect(() => {
     if (!modeloSeleccionado) return;
 
-            // Inicia en 0 en lugar de incluir PrecioManoObra directamente
-        let total = 0; 
+    let total = 0; 
 
-        // Suma el precio base (que ya incluye mano de obra internamente)
-        if (modeloSeleccionado.PrecioManoObra) {
-          total += parseFloat(modeloSeleccionado.PrecioManoObra) || 0;
-        }
+    if (modeloSeleccionado.PrecioManoObra) {
+      total += parseFloat(modeloSeleccionado.PrecioManoObra) || 0;
+    }
 
-    // Calcular precio para cada material seleccionado
     Object.entries(materialesSeleccionados).forEach(([tipo, material]) => {
       if (!material) return;
       
@@ -88,47 +85,7 @@ export default function PersonalizarJoyas() {
     }));
   };
 
-  const aumentarCantidad = (tipo) => {
-    setMaterialesSeleccionados(prev => {
-      const material = prev[tipo];
-      if (!material) return prev;
-      
-      const nuevoMaterial = { ...material };
-      
-      if (tipo === 'hilo') {
-        nuevoMaterial.metros = (nuevoMaterial.metros || 1) + 1;
-      } else {
-        nuevoMaterial.gramos = (nuevoMaterial.gramos || 1) + 1;
-      }
-      
-      return {
-        ...prev,
-        [tipo]: nuevoMaterial
-      };
-    });
-  };
-
-  const disminuirCantidad = (tipo) => {
-    setMaterialesSeleccionados(prev => {
-      const material = prev[tipo];
-      if (!material) return prev;
-      
-      const nuevoMaterial = { ...material };
-      
-      if (tipo === 'hilo') {
-        nuevoMaterial.metros = Math.max(1, (nuevoMaterial.metros || 1) - 1);
-      } else {
-        nuevoMaterial.gramos = Math.max(1, (nuevoMaterial.gramos || 1) - 1);
-      }
-      
-      return {
-        ...prev,
-        [tipo]: nuevoMaterial
-      };
-    });
-  };
-
-  const modelosFiltrados = categoriaSeleccionada
+  const modelosFiltrados = categoriaSeleccionada && categoriaSeleccionada !== "null"
     ? modelos.filter(m => m.categoria === categoriaSeleccionada)
     : modelos;
 
@@ -151,156 +108,249 @@ export default function PersonalizarJoyas() {
             <FiHome className="ml-2 text-[#7B2710] text-2xl" />
           </Link>
 
-          {/* Alineación de íconos */}
           <div className="flex items-center gap-4">
             <div className="relative group">
-            <Link href="/login" className="text-[#7B2710] hover:text-[#DC9C5C] flex items-center">
-              <FiUser className="text-2xl" />
-            </Link>
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-              Iniciar sesión
+              <Link href="/login" className="text-[#7B2710] hover:text-[#DC9C5C] flex items-center">
+                <FiUser className="text-2xl" />
+              </Link>
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                Iniciar sesión
+              </div>
             </div>
-            </div>
-            {/* IconoCarrito también alineado */}
             <div className="flex items-center text-[#7B2710] hover:text-[#DC9C5C]">
               <IconoCarrito />
             </div>
           </div>
         </header>
 
-
-
-        <div className="bg-[#F5F1F1] p-6 rounded-2xl shadow-xl space-y-6 border-5 border-[#7B2710]">
-          <h2 className="text-xl font-semibold text-[#7B2710]">1. Selecciona una categoría</h2>
-          <select
-            className="w-full p-2 border rounded"
-            value={categoriaSeleccionada}
-            onChange={e => setCategoriaSeleccionada(e.target.value)}
-          >
-            
-            {categorias.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-
-          <h2 className="text-xl font-semibold text-[#7B2710]">2. Escoge un modelo</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {modelosFiltrados.map(m => (
-              <div
-                key={m.id_ProPer}
-                className={`border p-2 rounded cursor-pointer ${
-                  modeloSeleccionado?.id_ProPer === m.id_ProPer ? 'border-[#DC9C5C]' : 'border-gray-300'
-                }`}
-                onClick={() => {
-                  setModeloSeleccionado(m);
-                  setIdModeloSeleccionado(m.id_ProPer);
-                }}
+        <div className="bg-[#F5F1F1] p-6 rounded-2xl shadow-xl space-y-6 border-4 border-[#7B2710]">
+          {/* 1. Selecciona una categoría - DROPDOWN CORREGIDO */}
+          <div>
+            <h2 className="text-xl font-semibold text-[#7B2710] mb-3">1. Selecciona una categoría</h2>
+            <div className="relative">
+              <button 
+                className="w-full bg-white p-3 rounded-lg border border-gray-300 flex justify-between items-center hover:border-[#DC9C5C] transition-colors"
+                onClick={() => setDropdownAbierto(!dropdownAbierto)}
               >
-                <img src={m.ImagenPP} alt={m.nombreModelo} className="w-full h-32 object-cover rounded" />
-                <p className="text-center text-sm mt-2">{m.nombreModelo}</p>
-              </div>
-            ))}
+                <span className={categoriaSeleccionada === "null" ? "text-gray-400" : "text-gray-800"}>
+                  {categoriaSeleccionada === "null" ? "Elegir categoría" : categoriaSeleccionada}
+                </span>
+                <FiChevronDown className={`transform transition-transform ${dropdownAbierto ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {dropdownAbierto && (
+                <>
+                  {/* Overlay para cerrar al hacer clic fuera */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setDropdownAbierto(false)}
+                  />
+                  
+                  {/* Lista de categorías */}
+                  <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                    {categorias.map(c => (
+                      <button
+                        key={c}
+                        className="w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0 transition-colors"
+                        onClick={() => {
+                          setCategoriaSeleccionada(c);
+                          setDropdownAbierto(false);
+                          setModeloSeleccionado(null);
+                          setIdModeloSeleccionado(null);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{c}</span>
+                          {categoriaSeleccionada === c && (
+                            <FiCheck className="text-[#DC9C5C]" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-              <><h2 className="text-xl font-semibold text-[#7B2710]">
-                  3. Selecciona los materiales
-              </h2></>
-          {/* 3. Materiales personalizados */}
+
+          {/* 2. Escoge un modelo */}
+          <div>
+  <h2 className="text-xl font-semibold text-[#7B2710] mb-3">
+    2. Escoge un modelo
+    {categoriaSeleccionada && categoriaSeleccionada !== "null" && (
+      <span className="text-sm font-normal text-gray-600 ml-2">
+        (Filtrado por: {categoriaSeleccionada})
+      </span>
+    )}
+  </h2>
+
+  {modelosFiltrados.length > 0 ? (
+    // contenedor tipo carrusel horizontal
+    <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {modelosFiltrados.map(m => (
+        <div
+          key={m.id_ProPer}
+          className={`relative snap-start flex-shrink-0 w-28 sm:w-32 md:w-40 border-2 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-110 ${
+            modeloSeleccionado?.id_ProPer === m.id_ProPer 
+              ? 'border-[#DC9C5C] shadow-lg' 
+              : 'border-gray-300 hover:border-[#DC9C5C]'
+          }`}
+          onClick={() => {
+            setModeloSeleccionado(m);
+            setIdModeloSeleccionado(m.id_ProPer);
+          }}
+        >
+          {/* contenedor de la imagen con altura fija para que no crezca */}
+          <div className="flex items-center justify-center h-26 sm:h-24 md:h-40  overflow-hidden rounded-t-xl bg-white p-2">
+            <img 
+              src={m.ImagenPP} 
+              alt={m.nombreModelo} 
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+
+          <div className="p-2 bg-white rounded-b-xl">
+            <p className="text-center text-sm font-medium text-gray-800 truncate">
+              {m.nombreModelo}
+            </p>
+
+            {modeloSeleccionado?.id_ProPer === m.id_ProPer && (
+              <div className="absolute top-2 right-2 bg-[#DC9C5C] rounded-full p-1">
+                <FiCheck className="text-white text-xs" />
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="text-center py-6 bg-yellow-50 rounded-lg border border-yellow-200">
+      <p className="text-yellow-700 font-medium">
+        No hay modelos disponibles
+        {categoriaSeleccionada && categoriaSeleccionada !== "null" && 
+          ` para la categoría "${categoriaSeleccionada}"`}
+      </p>
+    </div>
+  )}
+</div>
+
+
+          {/* 3. Selecciona los materiales - Solo visible cuando hay modelo seleccionado */}
+          
           {modeloSeleccionado && (
-            <>
+            <div>
+              <h2 className="text-xl font-semibold text-[#7B2710] mb-3">
+                3. Selecciona los materiales
+              </h2>
+              
               {['metales', 'hilos', 'piedras'].map(tipo => {
                 const lista = materiales[tipo];
-                const tipoSimple = tipo.replace(/s$/, ''); // Convierte "metales" a "metal", etc.
+                const tipoSimple = tipo.replace(/s$/, '');
                 const seleccionado = materialesSeleccionados[tipoSimple];
 
                 return (
-                      
                   Array.isArray(lista) && lista.length > 0 && (
-                    <div key={tipo}>
-                      <h3 className="mt-4 mb-2 capitalize text-[#5b1c0e] text-lg">
-                        {tipo} {seleccionado && `- Seleccionado: ${seleccionado.nombre || seleccionado.color}`}
+                    <div key={tipo} className="mb-6">
+                      <h3 className="text-lg font-semibold text-[#5b1c0e] mb-3 capitalize">
+                        {tipo === 'metales' ? 'Metales' : tipo === 'hilos' ? 'Hilos' : 'Piedras'}
                       </h3>
-                      {!seleccionado ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {lista.map((mat) => (
-                            <div
-                              key={mat.id}
-                              onClick={() => seleccionarMaterial(tipoSimple, mat)}
-                              className="border p-2 rounded shadow hover:shadow-md transition cursor-pointer hover:bg-gray-100"
-                            >
-                              <img
-                                src={mat.imagen}
-                                alt={mat.nombre || mat.color}
-                                className="w-full h-24 object-cover rounded"
-                              />
-                              <p className="text-center text-sm mt-1 text-gray-800">
-                                {mat.nombre || mat.color}
-                              </p>
-                              <p className="text-center text-xs text-gray-600 mt-1">
-                                Precio: ${tipo === 'hilos' ? 
-                                  ((mat.precioH || 0) / 10).toFixed(2) + '/m' : 
-                                  ((mat.precioM || mat.precioP || 0) / 10).toFixed(2) + '/g'}
-                              </p>
+                      
+                        {!seleccionado ? (
+                          <div className="flex overflow-x-auto space-x-3 pb-2">
+                            {lista.map((mat) => (
+                              <div
+                                key={mat.id}
+                                onClick={() => seleccionarMaterial(tipoSimple, mat)}
+                                className="w-32 flex-shrink-0 bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-[#DC9C5C]"
+                              >
+                                <div className="h-24 w-full mb-2 overflow-hidden rounded-lg">
+                                  <img
+                                    src={mat.imagen}
+                                    alt={mat.nombre || mat.color}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <p className="text-center text-sm font-medium text-gray-800 truncate">
+                                  {mat.nombre || mat.color}
+                                </p>
+                                <p className="text-center text-xs text-gray-600 mt-1">
+                                  ${tipo === 'hilos' ? 
+                                    ((mat.precioH || 0) / 10).toFixed(2) + '/m' : 
+                                    ((mat.precioM || mat.precioP || 0) / 10).toFixed(2) + '/g'}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+
+                        <div className="bg-gradient-to-r from-[#fffaf5] to-[#f8f4f0] p-4 rounded-xl border border-[#DC9C5C]">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-16 h-16 overflow-hidden rounded-lg">
+                                <img 
+                                  src={seleccionado.imagen} 
+                                  alt={seleccionado.nombre || seleccionado.color} 
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-800">
+                                  {seleccionado.nombre || seleccionado.color}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {tipo === 'hilos' ? 'Metros: ' : 'Gramos: '}
+                                  <span className="font-medium">{seleccionado.metros || seleccionado.gramos || 1}</span>
+                                </p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow">
-                          <div className="flex items-center">
-                            <img 
-                              src={seleccionado.imagen} 
-                              alt={seleccionado.nombre || seleccionado.color} 
-                              className="w-16 h-16 object-cover rounded mr-3"
-                            />
-                            <div>
-                              <p className="font-medium">{seleccionado.nombre || seleccionado.color}</p>
-              
+                            
+                            <div className="flex items-center space-x-3">
+                              
+                              <button 
+                                  onClick={() => seleccionarMaterial(tipoSimple, null)}
+                                  className="text-sm font-medium text-[#7B2710] hover:text-[#DC9C5C] px-3 py-1 rounded-lg border border-[#DC9C5C] hover:bg-[#fff7f2] transition-colors"
+                                >
+                                  Cambiar
+                              </button>
+
                             </div>
                           </div>
-          
-                          <button 
-                            onClick={() => seleccionarMaterial(tipoSimple, null)}
-                            className="ml-4 text-red-500 hover:text-red-700"
-                          >
-                            Cambiar
-                          </button>
                         </div>
                       )}
                     </div>
-                  )  
-                  
+                  )
                 );
               })}
-            </>
+            </div>
           )}
 
-          {/* Precio y tiempo de entrega */}
-          <div className="mt-6 p-4 bg-[#fffaf5] border border-[#DC9C5C] rounded">
-            <p className="text-lg font-bold text-[#7B2710]">
-              Precio Total: ${precioTotal.toFixed(2)}
-            </p>
-            {modeloSeleccionado && (
-              <p className="text-[#7B2710] font-semibold">
-                Tiempo estimado de entrega: {modeloSeleccionado.tiempoEntrega} días
-              </p>
-            )}
-          </div>
+          {/* Precio y tiempo de entrega - Solo visible cuando hay modelo seleccionado */}
+          {modeloSeleccionado && (
+            <>
+              <div className="mt-6 p-4 bg-gradient-to-r from-[#fffaf5] to-[#f8f4f0] border border-[#DC9C5C] rounded-xl">
+                <p className="text-lg font-bold text-[#7B2710]">
+                  Precio Total: ${precioTotal.toFixed(2)}
+                </p>
+                <p className="text-[#7B2710] font-semibold">
+                  Tiempo estimado de entrega: {modeloSeleccionado.tiempoEntrega} días
+                </p>
+              </div>
 
-          <BotonAgregarCarrito
-            producto={{
-              id: `personalizado-${modeloSeleccionado?.id_ProPer}`,
-              tipo: "personalizado",
-              imagen: modeloSeleccionado?.ImagenPP,
-              nombre: modeloSeleccionado?.nombreModelo,
-              materiales: materialesSeleccionados,
-              tiempoEntrega: modeloSeleccionado?.tiempoEntrega,
-              precio: precioTotal,
-              cantidad: cantidad // aquí se envía la cantidad seleccionada
-            }}
-            deshabilitado={!modeloSeleccionado || !materialesSeleccionados.metal}
-          />
-
-
-          
+              <BotonAgregarCarrito
+                producto={{
+                  id: `personalizado-${modeloSeleccionado?.id_ProPer}`,
+                  tipo: "personalizado",
+                  imagen: modeloSeleccionado?.ImagenPP,
+                  nombre: modeloSeleccionado?.nombreModelo,
+                  materiales: materialesSeleccionados,
+                  tiempoEntrega: modeloSeleccionado?.tiempoEntrega,
+                  precio: precioTotal,
+                  cantidad: cantidad
+                }}
+                deshabilitado={!modeloSeleccionado || !materialesSeleccionados.metal}
+              />
+            </>
+          )}
 
           <p className="mt-6 text-center text-[#7B2710] font-medium">
             Si no encuentras lo que buscas, contáctanos por WhatsApp y cotizamos el modelo que necesitas.

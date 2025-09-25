@@ -34,14 +34,26 @@ export default function EditarMateriales() {
     const { name, value } = e.target;
     
     if (name === "nombre") {
-      // Validar que solo sean letras, números o acentos (máximo 35 caracteres)
-      const regex = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
-      if (value === "" || regex.test(value)) {
-        if (value.length <= 35) {
-          setFormulario({ ...formulario, [name]: value });
-        }
+  // Regex:
+  //  - Solo letras, números, acentos y espacios
+  //  - No más de 3 números seguidos
+  //  - No más de 2 letras iguales seguidas
+  const regex = /^(?!.*\d{4})(?!.*([a-zA-ZÀ-ÿ])\1{2,})[a-zA-ZÀ-ÿ0-9\s]*$/;
+
+  // Quitar espacios al inicio (evita llenar solo con espacios)
+  const trimmedValue = value.trimStart();
+
+  if (trimmedValue === "" || regex.test(trimmedValue)) {
+    if (trimmedValue.length <= 35) {
+      // Evitar que sea solo números
+      if (!/^\d+$/.test(trimmedValue)) {
+        setFormulario({ ...formulario, [name]: trimmedValue });
       }
-    } else if (name === "precio") {
+    }
+  }
+}
+
+    else if (name === "precio") {
       // Validar que solo sean números entre 0 y 5000
       const regex = /^[0-9]*\.?[0-9]*$/;
       if (value === "" || regex.test(value)) {
@@ -54,19 +66,39 @@ export default function EditarMateriales() {
     }
   };
 
-  const manejarArchivo = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      if (validTypes.includes(file.type)) {
-        setFormulario({ ...formulario, imagen: file });
-        setErrorImagen("");
-      } else {
-        setErrorImagen("Formato inválido. Solo se permiten imágenes (JPEG, JPG, PNG, WEBP, GIF).");
-        e.target.value = ""; // Limpiar el input file
-      }
-    }
-  };
+const manejarArchivo = (e) => {
+  const file = e.target.files[0];
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+  if (!file) {
+    setErrorImagen("Debes seleccionar una imagen.");
+    setFormulario({ ...formulario, imagen: null });
+    return;
+  }
+
+  if (!validTypes.includes(file.type)) {
+    setErrorImagen("Formato inválido. Solo se permiten imágenes (JPEG, JPG, PNG, WEBP, GIF).");
+    setFormulario({ ...formulario, imagen: null });
+    e.target.value = ""; // limpiar input
+    return;
+  }
+
+  setFormulario({ ...formulario, imagen: file });
+  setErrorImagen("");
+};
+
+const manejarSubmit = (e) => {
+  e.preventDefault();
+  if (!formulario.imagen) {
+    setErrorImagen("La imagen es obligatoria.");
+    return;
+  }
+
+  // Aquí ya podrías enviar tu formulario
+  console.log("Formulario listo con imagen:", formulario.imagen);
+};
+
+
 
   const manejarEditar = (tipo, item) => {
     setFormulario({
@@ -87,34 +119,42 @@ export default function EditarMateriales() {
     setErrorImagen("");
   };
 
-  const manejarGuardar = async () => {
-    const nombreValido = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
-    const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif)$/.test(file?.type);
+const manejarGuardar = async () => {
+  const nombreValido = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
+  const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif)$/.test(file?.type);
 
-    if (!formulario.nombre || formulario.nombre.length > 35 || !nombreValido.test(formulario.nombre)) {
-      return alert("Nombre inválido. Solo letras, números y acentos están permitidos (máximo 35 caracteres).");
-    }
+  if (!formulario.nombre || formulario.nombre.length > 35 || !nombreValido.test(formulario.nombre)) {
+    return alert("Nombre inválido. Solo letras, números y acentos están permitidos (máximo 35 caracteres).");
+  }
 
-    if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 5000) {
-      return alert("El precio debe ser un número válido entre 0 y 5000.");
-    }
+  if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 5000) {
+    return alert("El precio debe ser un número válido entre 0 y 5000.");
+  }
 
-    if (formulario.imagen) {
-      const img = new Image();
-      img.src = URL.createObjectURL(formulario.imagen);
-      img.onload = async () => {
-        if (img.width > 1200 || img.height > 1200) {
-          return alert("La imagen debe tener un tamaño máximo de 1200x1200.");
-        }
-        if (!esImagen(formulario.imagen)) {
-          return alert("El archivo debe ser una imagen (jpg, png, webp, etc.).");
-        }
-        await enviarFormulario();
-      };
-    } else {
+  // 🔴 Validación de imagen obligatoria SOLO si es nuevo
+  if (!modoEdicion && !formulario.imagen) {
+    setErrorImagen("La imagen es obligatoria.");
+    return;
+  }
+
+  if (formulario.imagen) {
+    const img = new Image();
+    img.src = URL.createObjectURL(formulario.imagen);
+    img.onload = async () => {
+      if (img.width > 1200 || img.height > 1200) {
+        return alert("La imagen debe tener un tamaño máximo de 1200x1200.");
+      }
+      if (!esImagen(formulario.imagen)) {
+        return alert("El archivo debe ser una imagen (jpg, png, webp, etc.).");
+      }
       await enviarFormulario();
-    }
-  };
+    };
+  } else {
+    // Aquí solo entra si está en edición y no cambió la imagen
+    await enviarFormulario();
+  }
+};
+
 
   const enviarFormulario = async () => {
     const formData = new FormData();

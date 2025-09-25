@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react"; // Añade useRef
-import { FiX, FiArrowRight } from "react-icons/fi";
+import { FiArrowRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';

@@ -11,7 +11,7 @@ const menuItems = [
   { title: "Envios", submenu: ["Gestión de envios"] },
   { title: "Pedidos", submenu: ["Gestión de pedidos"] },
   { title: "Gestión de clientes", submenu: ["Gestión de clientes"] },
-  { title: "Reportes", submenu: ["Reportes", "Métricas", "Ventas", "Chat"] },
+  { title: "Reportes", submenu: ["Reportes", "Chat"] },
 ];
 
 export default function NavegadorAdmin() {
@@ -52,8 +52,6 @@ export default function NavegadorAdmin() {
       "Gestión de pedidos": "/GestionPedidos",
       "Gestión de clientes": "/gestionClientes/GestionClientes",
       "Reportes": "/Reportes",
-      "Métricas": "/Reportes/Metricas",
-      "Ventas": "/Reportes/Ventas",
       "Chat": "/Reportes/Chat",
     };
     router.push(routes[submenuItem]);

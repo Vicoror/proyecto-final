@@ -57,12 +57,40 @@ export default function EditarAnunciosBase() {
     }
   }, [anuncios]);
 
-  const handleChange = (index, value) => {
-    const nuevos = [...anuncios];
-    const clean = value.replace(/[<>{}[\]()*&^#@~`"'\\]/g, '').slice(0, 100);
-    nuevos[index].titulo = clean;
-    setAnuncios(nuevos);
-  };
+const handleChange = (index, value) => {
+  const nuevos = [...anuncios];
+
+  // 1. Limpiar caracteres prohibidos
+  let clean = value.replace(/[<>{}[\]()*&^#@~`"'\\]/g, '').slice(0, 100);
+
+  // 2. Evitar más de dos caracteres consecutivos iguales
+  clean = clean.replace(/([a-zA-Z0-9\s])\1{2,}/g, "$1$1");
+
+  // 3. Evitar que comience o quede solo con espacios
+  if (/^\s+$/.test(clean)) {
+    clean = clean.replace(/^\s+/, ""); // elimina espacios al inicio si es todo espacios
+  }
+
+  // 4. Evitar que sea solo números
+  if (/^\d+$/.test(clean)) {
+    clean = clean.replace(/\d+$/, ""); // elimina números si todo es número
+  }
+
+  // Guardar el valor limpio
+  nuevos[index].titulo = clean;
+  setAnuncios(nuevos);
+
+  // Mensajes opcionales para el usuario
+  if (clean.trim().length === 0) {
+    setMensaje("El título no puede estar vacío o solo con espacios");
+  } else if (/^\d+$/.test(clean.trim())) {
+    setMensaje("El título no puede contener solo números");
+  } else {
+    setMensaje("");
+  }
+};
+
+
 
   const handleToggleActivo = async (index) => {
     const anuncio = anuncios[index];

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
+import bcrypt from "bcryptjs";
 
 // Función para validar el CAPTCHA con Google reCAPTCHA
 async function verifyCaptcha(token) {
@@ -32,22 +33,18 @@ export async function POST(req) {
     console.log("Captcha Válido")
 
     // Conectar a la base de datos
-    /*db = await mysql.createConnection({
-      host: "ballast.proxy.rlwy.net",
-      user: "root",
-      password: "UjoNIhdtAkcSYSzZBeNQKPejgbKulsyb",
-      database: "mi_proyecto_final",
-      port: 11561,
-    });*/
+    const dbConfig = {
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    };
 
-        // Conectar a la base de datos localhost
-    db = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "12345678",
-      database: "mi_proyecto_final",
-      port: 3306,
-    });
+    db = await mysql.createConnection(dbConfig);
 
     // Verificar si el correo ya está registrado
     const [existingUser] = await db.execute(
@@ -63,10 +60,14 @@ export async function POST(req) {
       );
     }
 
-    // Insertar nuevo usuario
+    // Encriptar la contraseña antes de guardarla
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Insertar nuevo usuario con la contraseña encriptada
     const [result] = await db.execute(
       "INSERT INTO crear_usuario (nombre, correo, contraseña) VALUES (?, ?, ?)",
-      [name, email, password]
+      [name, email, hashedPassword]
     );
 
     await db.end();

@@ -157,17 +157,26 @@ export default function GestionPedidos() {
           
           {/* Buscador */}
           <div className="relative mb-6">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar por número de pedido..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560]"
+                value={terminoBusqueda}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (
+                    valor.length <= 20 &&
+                    /^[a-zA-Z0-9\s-]*$/.test(valor)
+                  ) {
+                    setTerminoBusqueda(valor);
+                  }
+                }}
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Buscar por número de pedido..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560]"
-              value={terminoBusqueda}
-              onChange={(e) => setTerminoBusqueda(e.target.value)}
-            />
-          </div>
+
           
           {/* Tabla de pedidos */}
           {cargando ? (
@@ -456,8 +465,13 @@ export default function GestionPedidos() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nuevo estado</label>
                 <select
                   value={nuevoEstado}
-                  onChange={(e) => setNuevoEstado(e.target.value)}
+                  onChange={(e) => {
+                    if (nuevoEstado !== 'cancelado') { // Solo permitir cambio si NO está cancelado
+                      setNuevoEstado(e.target.value);
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560]"
+                  disabled={nuevoEstado === 'cancelado'} // opcional: deshabilitar visualmente el select
                 >
                   <option value="en_proceso">En proceso</option>
                   <option value="enviado">Enviado</option>
@@ -465,20 +479,21 @@ export default function GestionPedidos() {
                   <option value="cancelado">Cancelado</option>
                 </select>
               </div>
+
               
               {(nuevoEstado === 'enviado' || nuevoEstado === 'entregado' || nuevoEstado === 'cancelado') && (
                 <div className="mb-4">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Mensaje para el cliente (opcional)
-            </label>
-            <textarea
-              value={mensajeCorreo}
-              onChange={(e) => {
-                const valor = e.target.value;
-                // Permitir letras, números, espacios, puntuación básica y acentos
-                if (valor === '' || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?¡¿:;()\-'"@#$%&*=+/\n\r]*$/.test(valor)) {
-                  setMensajeCorreo(valor);
-                }
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mensaje para el cliente (opcional)
+                      </label>
+                      <textarea
+                        value={mensajeCorreo}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          // Permitir letras, números, espacios, puntuación básica y acentos
+                          if (valor === '' || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?¡¿:;()\-'"@#$%&*=+/\n\r]*$/.test(valor)) {
+                            setMensajeCorreo(valor);
+                          }
               }}
               rows={3}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560]"

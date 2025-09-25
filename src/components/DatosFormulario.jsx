@@ -139,7 +139,6 @@ const PerfilUsuario = ({ onValidChange }) => {
           break;
 
         case 'direccion.numExt':
-        case 'direccion.numInt':
           if (!/^[a-zA-Z0-9\s-]{1,10}$/.test(trimmedValue)) {
             newErrors[name] = 'Máximo 10 caracteres alfanuméricos';
           } else if (trimmedValue === '') {
@@ -148,6 +147,15 @@ const PerfilUsuario = ({ onValidChange }) => {
             delete newErrors[name];
           }
           break;
+
+        case 'direccion.numInt': // campo opcional
+          if (trimmedValue !== '' && !/^[a-zA-Z0-9\s-]{1,10}$/.test(trimmedValue)) {
+            newErrors[name] = 'Máximo 10 caracteres alfanuméricos';
+          } else {
+            delete newErrors[name]; // si está vacío o válido, no hay error
+          }
+          break;
+
 
         case 'direccion.codPostal':
           if (!/^[0-9]{5}$/.test(trimmedValue)) {
@@ -178,34 +186,41 @@ const PerfilUsuario = ({ onValidChange }) => {
   const handleProfileChange = (e) => {
   const { name, value } = e.target;
 
+  // Limpiar espacios al inicio y al final
+  const valorLimpio = value.trimStart();
+
+  // Evitar que el campo quede solo con espacios
+  const valorFinal = valorLimpio === "" ? "" : value;
+
   if (name.startsWith('direccion.')) {
     const field = name.split('.')[1];
     setProfileData(prev => ({
       ...prev,
       direccion: {
         ...prev.direccion,
-        [field]: value
+        [field]: valorFinal
       }
     }));
-    validateField(name, value);
+    validateField(name, valorFinal);
   } else if (name.startsWith('telefonos.')) {
     const field = name.split('.')[1];
     setProfileData(prev => ({
       ...prev,
       telefonos: {
         ...prev.telefonos,
-        [field]: value
+        [field]: valorFinal
       }
     }));
-    validateField(name, value);
+    validateField(name, valorFinal);
   } else {
     setProfileData(prev => ({
       ...prev,
-      [name]: value
+      [name]: valorFinal
     }));
-    validateField(name, value);
+    validateField(name, valorFinal);
   }
 };
+
 
  const saveProfileChanges = async () => {
   // Validar todos los campos antes de enviar

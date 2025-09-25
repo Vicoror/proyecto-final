@@ -54,11 +54,12 @@ Abrir en WhatsApp
 
 
 <button
-onClick={() => setOpen((v) => !v)}
-aria-label="Abrir chat de WhatsApp"
-className="h-14 w-14 rounded-full shadow-xl bg-green-500 text-white flex items-center justify-center text-xl"
+  id="whatsapp-widget-btn"
+  onClick={() => setOpen((v) => !v)}
+  aria-label="Abrir chat de WhatsApp"
+  className="h-14 w-14 rounded-full shadow-xl bg-green-500 text-white flex items-center justify-center text-xl"
 >
-{open ? '×' : '💬'}
+  {open ? '×' : '💬'}
 </button>
 </div>
 );

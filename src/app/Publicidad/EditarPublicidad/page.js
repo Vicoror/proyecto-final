@@ -186,8 +186,16 @@ export default function PaginaBase() {
   };
 
   const sanitizarEnlace = (enlace) => {
-    return enlace.replace(/[<>"'`]/g, "");
-  };
+  // 1. Quitar caracteres prohibidos
+  let limpio = enlace.replace(/[<>"'`]/g, "");
+  
+  // 2. Eliminar espacios al inicio y al final
+  limpio = limpio.trim();
+
+  // 3. Si después de limpiar queda vacío, devolver cadena vacía
+  return limpio === "" ? "" : limpio;
+};
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

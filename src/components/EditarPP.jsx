@@ -342,22 +342,40 @@ export default function EditarPP() {
                 maxLength={30}
                 onChange={(e) => {
                   const nuevoTexto = e.target.value;
-                  setBusqueda(nuevoTexto);
-                  
-                  // Validación en tiempo real
-                  if (nuevoTexto.length >= 30) {
+
+                  // 1. Filtrar caracteres: solo letras, números, espacios y guiones
+                  let textoFiltrado = nuevoTexto.replace(/[^a-zA-Z0-9\s\-]/g, "");
+
+                  // 2. Evitar más de dos números iguales seguidos
+                  textoFiltrado = textoFiltrado.replace(/(\d)\1{2,}/g, "$1$1");
+
+                  // 3. Evitar más de dos letras iguales seguidas (case-insensitive)
+                  textoFiltrado = textoFiltrado.replace(/([a-zA-Z])\1{2,}/g, "$1$1");
+
+                  setBusqueda(textoFiltrado);
+
+                  // 4. Validaciones adicionales
+                  if (textoFiltrado.trim().length === 0) {
+                    setErrorBusqueda("El campo no puede estar vacío o solo con espacios");
+                    setFiltrados([]);
+                  } else if (/^\d+$/.test(textoFiltrado.trim())) {
+                    setErrorBusqueda("No se permiten solo números");
+                    setFiltrados([]);
+                  } else if (textoFiltrado.length > 30) {
                     setErrorBusqueda("Máximo 30 caracteres permitidos");
-                  } else if (nuevoTexto.trim().length > 0 && nuevoTexto.trim().length < 3) {
+                    setFiltrados([]);
+                  } else if (textoFiltrado.trim().length < 3) {
                     setErrorBusqueda("Mínimo 3 caracteres requeridos");
                     setFiltrados([]);
                   } else {
                     setErrorBusqueda("");
-                    manejarCambioBusqueda(nuevoTexto);
+                    manejarCambioBusqueda(textoFiltrado);
                   }
                 }}
                 placeholder="Escribe el nombre del producto..."
                 className="w-full p-3 pl-4 border border-[#8C9560] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#762114]"
               />
+
               {busqueda && (
                 <div className="absolute right-10 top-3 flex items-center">
                   <span className="text-xs text-gray-500 mr-2">
@@ -380,6 +398,7 @@ export default function EditarPP() {
               <p className="text-red-500 mt-2 text-sm">{errorBusqueda}</p>
             )}
           </div>
+
 
           {/* LISTA DE RESULTADOS */}
           {filtrados.length > 0 && (

@@ -47,16 +47,16 @@ export default function PaginaBase() {
     }
   };
 
-  const handleDescripcionChange = (index, value) => {
-    // Validar solo letras, números, espacios, acentos, puntuación básica y paréntesis
-    const regex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,;:¿?¡!()]*$/;
-    
-    if (value.length <= 150 && (regex.test(value) || value === '')) {
-      const newEnvios = [...envios];
-      newEnvios[index].descripcion_envio = value;
-      setEnvios(newEnvios);
-    }
-  };
+const handleDescripcionChange = (index, value) => {
+  // Solo permitir letras, números, acentos, puntuación básica, paréntesis y espacios internos
+  const regex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,;:¿?¡!()]+(\s[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ.,;:¿?¡!()]*)*$/;
+
+  if (value.length <= 150 && (regex.test(value) || value === '')) {
+    const newEnvios = [...envios];
+    newEnvios[index].descripcion_envio = value;
+    setEnvios(newEnvios);
+  }
+};
 
   const handlePrecioChange = (index, value) => {
     // Validar que sea número entre 0 y 500
@@ -78,36 +78,44 @@ export default function PaginaBase() {
     setEnvios(newEnvios);
   };
 
-  const handleSubmit = async (index) => {
-    const loadingToast = toast.loading('Guardando cambios...');
-    
-    try {
-      const envioToUpdate = envios[index];
-      const response = await fetch(`/api/envios?id=${envioToUpdate.id_envio}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(envioToUpdate),
-      });
+ const handleSubmit = async (index) => {
+  const envioToUpdate = envios[index];
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Error al actualizar');
+  // Validar que la descripción no esté vacía ni sea solo espacios
+  if (!envioToUpdate.descripcion_envio || !envioToUpdate.descripcion_envio.trim()) {
+    toast.error('La descripción no puede estar vacía', { id: 'empty-desc' });
+    return;
+  }
 
-      // Actualizar el estado con los datos devueltos por el servidor
-      const newEnvios = [...envios];
-      newEnvios[index] = data.data;
-      setEnvios(newEnvios);
+  const loadingToast = toast.loading('Guardando cambios...');
 
-      toast.success('Cambios guardados correctamente', {
-        id: loadingToast,
-      });
-    } catch (error) {
-      toast.error(error.message, {
-        id: loadingToast,
-      });
-    }
-  };
+  try {
+    const response = await fetch(`/api/envios?id=${envioToUpdate.id_envio}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(envioToUpdate),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Error al actualizar');
+
+    // Actualizar el estado con los datos devueltos por el servidor
+    const newEnvios = [...envios];
+    newEnvios[index] = data.data;
+    setEnvios(newEnvios);
+
+    toast.success('Cambios guardados correctamente', {
+      id: loadingToast,
+    });
+  } catch (error) {
+    toast.error(error.message, {
+      id: loadingToast,
+    });
+  }
+};
+
 
   return (
     <div
