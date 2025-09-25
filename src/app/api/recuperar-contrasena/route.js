@@ -6,7 +6,6 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-// Configuración de la base de datos usando variables de entorno CON PUERTO
 const dbConfig = {
   host: process.env.DB_HOST,
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
@@ -23,12 +22,10 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-// Función para validar el CAPTCHA usando Google reCAPTCHA
 async function verifyCaptcha(token) {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    if (!secretKey) return false;
-    if (!token || token === 'null' || token === 'undefined') return false;
+    if (!secretKey || !token || token === 'null' || token === 'undefined') return false;
 
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
@@ -44,7 +41,6 @@ async function verifyCaptcha(token) {
   }
 }
 
-// Función para crear el transporter de email
 function createEmailTransporter() {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
     throw new Error('Variables de entorno de email no configuradas');
@@ -58,16 +54,13 @@ function createEmailTransporter() {
     },
     secure: true,
     tls: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: false,
+    },
   });
 }
 
-// Función para crear la tabla de tokens si no existe
-async function ensureResetTokensTable(connection) 
-{
+async function ensureResetTokensTable(connection) {
   try {
-    // Crear tabla con foreign key usando id_cliente
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -81,14 +74,12 @@ async function ensureResetTokensTable(connection)
         INDEX (expires_at)
       )
     `);
-    console.log('Tabla de tokens creada con foreign key a id_cliente');
   } catch (error) {
     console.error('Error creando tabla de tokens:', error.message);
     throw error;
   }
 }
 
-// POST para solicitar recuperación de contraseña
 export async function POST(request) {
   let connection;
 
@@ -115,7 +106,6 @@ export async function POST(request) {
       );
     }
 
-    // Validar captcha
     if (!captchaToken) {
       return NextResponse.json(
         { error: 'Token de captcha no proporcionado' },
@@ -133,16 +123,13 @@ export async function POST(request) {
 
     connection = await pool.getConnection();
 
-    // Verificar si la tabla de tokens existe, si no crearla
     await ensureResetTokensTable(connection);
 
-    // Consultar usuario por correo
     const [users] = await connection.query(
       'SELECT id_cliente, nombre FROM crear_usuario WHERE correo = ?',
       [email]
     );
 
-    // Por seguridad, no revelamos si el email existe o no
     if (!users || users.length === 0) {
       return NextResponse.json(
         { 
@@ -155,47 +142,37 @@ export async function POST(request) {
 
     const user = users[0];
 
+    // Marcar tokens anteriores como usados
+    await connection.execute(
+      'UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0',
+      [user.id_cliente]
+    );
+
     // Generar token seguro
     const resetToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = await bcrypt.hash(resetToken, 12);
-    
-    // Fecha de expiración (1 hora)
-    // Usar 24 horas temporalmente
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+
+    // Fecha de expiración UTC (1 hora)
+    const expiresAt = new Date(Date.now() + 3600000);
     const expiresAtUTC = expiresAt.toISOString().slice(0, 19).replace('T', ' ');
 
-    // Eliminar tokens previos no utilizados para este usuario
-   await connection.execute(
-      'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
-      [user.id_cliente, tokenHash, expiresAtUTC]  // ← Usar expiresAtUTC
-    );
-
-    // Guardar nuevo token
+    // Insertar token nuevo
     await connection.execute(
       'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
-      [user.id_cliente, tokenHash, expiresAt]
+      [user.id_cliente, tokenHash, expiresAtUTC]
     );
 
-    // Configurar transporter de email
+    // Configurar y verificar transporter
     let transporter;
     try {
       transporter = createEmailTransporter();
       await transporter.verify();
-      console.log('Servidor de email configurado correctamente');
     } catch (transporterError) {
-      console.error('ERROR EN CONFIGURACIÓN DE EMAIL:', transporterError.message);
-      
-      if (transporterError.message.includes('Invalid login')) {
-        return NextResponse.json(
-          { error: 'Error de autenticación con el servicio de email. Verifica las credenciales.' },
-          { status: 500 }
-        );
-      } else {
-        return NextResponse.json(
-          { error: 'Error de configuración del servidor de correo.' },
-          { status: 500 }
-        );
-      }
+      console.error('Error en configuración de email:', transporterError.message);
+      return NextResponse.json(
+        { error: 'Error de configuración del servidor de correo.' },
+        { status: 500 }
+      );
     }
 
     // Crear enlace de restablecimiento
@@ -210,7 +187,6 @@ export async function POST(request) {
           <h2 style="color: #7B2710; text-align: center;">Restablecer Contraseña</h2>
           <p>Hola ${user.nombre},</p>
           <p>Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-          
           <div style="text-align: center; margin: 25px 0;">
             <a href="${resetLink}" 
                style="background-color: #7B2710; color: white; padding: 12px 24px; 
@@ -218,45 +194,21 @@ export async function POST(request) {
               Restablecer Contraseña
             </a>
           </div>
-
           <p style="color: #666; font-size: 0.9em;">
             O copia y pega este enlace en tu navegador:<br>
             <span style="word-break: break-all;">${resetLink}</span>
           </p>
-
           <p style="color: #ff6b6b; font-size: 0.9em;">
             ⚠️ Este enlace expirará en 1 hora por motivos de seguridad.
           </p>
-
           <p>Si no solicitaste restablecer tu contraseña, puedes ignorar este mensaje.</p>
-          
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="color: #666; font-size: 0.9em;">— El equipo de Bernarda Sierra</p>
         </div>
       `,
     };
 
-    // Enviar el correo
-    try {
-      console.log('Intentando enviar correo de restablecimiento a:', email);
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Correo de restablecimiento enviado. Message ID:', info.messageId);
-      
-    } catch (mailError) {
-      console.error('ERROR AL ENVIAR CORREO:', mailError.message);
-      
-      if (mailError.code === 'EAUTH') {
-        return NextResponse.json(
-          { error: 'Error de autenticación con el servicio de email.' },
-          { status: 500 }
-        );
-      } else {
-        return NextResponse.json(
-          { error: 'Error al enviar el correo. Por favor, intenta más tarde.' },
-          { status: 500 }
-        );
-      }
-    }
+    await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
       {
@@ -268,14 +220,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error general en el proceso:', error.message);
-    
-    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { error: 'Error de conexión con la base de datos. Intenta más tarde.' },
-        { status: 500 }
-      );
-    }
-    
     return NextResponse.json(
       { error: 'Error interno del servidor. Por favor, contacta al administrador.' },
       { status: 500 }
