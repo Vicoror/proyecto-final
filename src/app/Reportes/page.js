@@ -441,18 +441,20 @@ const descargarPDF = async () => {
                 <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
                   <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">Empresas de Envío</h3>
                   <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.empresaEnvio} margin={{ top: 5, right: 20, left: 0, bottom: 30 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="empresa_envio" angle={-45} textAnchor="end" height={70} />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="cantidad" fill="#FF7043" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={[...data.empresaEnvio].sort((a, b) => b.cantidad - a.cantidad)} 
+                      margin={{ top: 5, right: 20, left: 0, bottom: 30 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="empresa_envio" angle={-45} textAnchor="end" height={70} />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="cantidad" fill="#FF7043" />
+                    </BarChart>
+                  </ResponsiveContainer>
                   </div>
                 </div>
-
                 {/* 7. Estado de pedidos */}
                 <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
                   <h3 className="text-lg font-bold text-[#7B2710] mb-4 text-center">Estado de Pedidos</h3>

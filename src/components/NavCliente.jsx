@@ -151,9 +151,17 @@ const ProductosComponent = () => {
       if (!response.ok) throw new Error("Error al buscar productos");
       const data = await response.json();
       const results = Array.isArray(data) ? data : [data];
-      if (results.length === 0) throw new Error("No se encontraron productos");
-      setSearchResults(results);
-      setSuccess(`Encontrados: ${results.length} productos`);
+      
+      // 🔹 FILTRAR SOLO PRODUCTOS ACTIVOS
+      const productosActivos = results.filter(producto => 
+        producto.activo === 1 || producto.estado === 1 || producto.status === 1
+      );
+      
+      if (productosActivos.length === 0) throw new Error("No se encontraron productos activos");
+      
+      setSearchResults(productosActivos);
+      setSuccess(`Encontrados: ${productosActivos.length} productos`);
+      
     } catch (error) {
       setError(error.message);
     } finally {
@@ -328,15 +336,17 @@ const ProductosComponent = () => {
         </div>
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg mt-1 z-50 max-h-60 overflow-y-auto">
-            {suggestions.map((s) => (
-              <div
-                key={s.id_productos}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                onClick={() => selectSuggestion(s)}
-              >
-                {s.nombre}
-              </div>
-            ))}
+            {suggestions
+              .filter(producto => producto.activo === 1) // 🔹 FILTRAR SOLO ACTIVOS
+              .map((s) => (
+                <div
+                  key={s.id_productos}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  onClick={() => selectSuggestion(s)}
+                >
+                  {s.nombre}
+                </div>
+              ))}
           </div>
         )}
       </div>

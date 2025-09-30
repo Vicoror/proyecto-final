@@ -61,31 +61,49 @@ export default function NavegadorAdmin() {
   };
 
   const handleKeyDown = (e) => {
-    if (openMenu !== null && menuItems[openMenu].submenu.length > 0) {
-      if (e.key === "ArrowDown") {
-        setFocusedSubIndex((prev) => (prev + 1) % menuItems[openMenu].submenu.length);
-      } else if (e.key === "ArrowUp") {
-        setFocusedSubIndex((prev) => (prev - 1 + menuItems[openMenu].submenu.length) % menuItems[openMenu].submenu.length);
-      } else if (e.key === "ArrowLeft") {
-        setOpenMenu((prev) => (prev - 1 + menuItems.length) % menuItems.length);
-        setFocusedSubIndex(-1);
-      } else if (e.key === "ArrowRight") {
-        setOpenMenu((prev) => (prev + 1) % menuItems.length);
-        setFocusedSubIndex(-1);
-      } else if (e.key === "Enter" && focusedSubIndex >= 0) {
-        handleSubmenuClick(menuItems[openMenu].submenu[focusedSubIndex]);
-      }
-    } else {
-      if (e.key === "ArrowRight") {
-        setFocusedMainIndex((prev) => (prev + 1) % menuItems.length);
-      } else if (e.key === "ArrowLeft") {
-        setFocusedMainIndex((prev) => (prev - 1 + menuItems.length) % menuItems.length);
-      } else if (e.key === "Enter") {
-        setOpenMenu(focusedMainIndex);
-        setFocusedSubIndex(0);
-      }
+  // 🔹 IGNORAR SI ESTÁS EN UN INPUT, TEXTAREA O SELECT
+  if (
+    e.target.tagName === 'INPUT' || 
+    e.target.tagName === 'TEXTAREA' || 
+    e.target.tagName === 'SELECT' ||
+    e.target.isContentEditable
+  ) {
+    return; // No hacer nada si está en un campo de entrada
+  }
+
+  if (openMenu !== null && menuItems[openMenu].submenu.length > 0) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setFocusedSubIndex((prev) => (prev + 1) % menuItems[openMenu].submenu.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setFocusedSubIndex((prev) => (prev - 1 + menuItems[openMenu].submenu.length) % menuItems[openMenu].submenu.length);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setOpenMenu((prev) => (prev - 1 + menuItems.length) % menuItems.length);
+      setFocusedSubIndex(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setOpenMenu((prev) => (prev + 1) % menuItems.length);
+      setFocusedSubIndex(-1);
+    } else if (e.key === "Enter" && focusedSubIndex >= 0) {
+      e.preventDefault(); // 🔹 Prevenir submit de formularios
+      handleSubmenuClick(menuItems[openMenu].submenu[focusedSubIndex]);
     }
-  };
+  } else {
+    if (e.key === "ArrowRight") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setFocusedMainIndex((prev) => (prev + 1) % menuItems.length);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault(); // 🔹 Prevenir scroll de página
+      setFocusedMainIndex((prev) => (prev - 1 + menuItems.length) % menuItems.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault(); // 🔹 Prevenir submit de formularios
+      setOpenMenu(focusedMainIndex);
+      setFocusedSubIndex(0);
+    }
+  }
+};
 
   useEffect(() => {
     if (focusedSubIndex === -1 && mainMenuRefs.current[focusedMainIndex]) {

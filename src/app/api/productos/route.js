@@ -49,13 +49,29 @@ export async function GET(request) {
       let table = type === 'personalizados' ? 'productos_personalizados' : 'productos';
       const idField = type === 'personalizados' ? 'id_productosPerso' : 'id_productos';
       const [rows] = await pool.query(`SELECT * FROM ${table} WHERE ${idField} = ?`, [id]);
+
       if (rows.length === 0) {
         return new Response(JSON.stringify({ message: 'Producto no encontrado' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json' }
         });
       }
-      return new Response(JSON.stringify(rows[0]), {
+
+      let producto = rows[0];
+
+      // 🔹 Si es un anillo, traer tallas con stock
+      if (producto.categoria === "Anillos") {
+        const [tallas] = await pool.query(
+          `SELECT t.talla, s.stock 
+           FROM stock_anillos s
+           JOIN tallas_anillos t ON s.id_talla = t.id_talla
+           WHERE s.id_producto = ?`,
+          [producto.id_productos]
+        );
+        producto.tallas = tallas;
+      }
+
+      return new Response(JSON.stringify(producto), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -102,6 +118,9 @@ export async function POST(request) {
     const category = formData.get('category');
     const stock = parseInt(formData.get('stock'), 10);
     const active = formData.get('active') === 'true';
+    const stockPorTalla = formData.get('stockPorTalla')
+      ? JSON.parse(formData.get('stockPorTalla'))
+      : null;
 
     const image = formData.get('image');
     const image2 = formData.get('image2');
@@ -130,12 +149,27 @@ export async function POST(request) {
     const image2Url = await subirImagen(image2);
     const image3Url = await subirImagen(image3);
 
-    const [insert] = await pool.query(
+    await pool.query(
       'INSERT INTO productos (id_productos, nombre, precio, descripcion, categoria, imagen, imagen2, imagen3, stock, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [id, name, price, description, category, imageUrl, image2Url, image3Url, stock, active]
     );
 
-    return new Response(JSON.stringify({ success: true, id: insert.insertId }), {
+    // 🔹 Guardar stock por talla si es anillo
+    // 🔹 Guardar stock por talla si es anillo
+       // Guardar stock por talla si es anillo
+      if (category === "Anillos" && stockPorTalla) {
+        for (const [id_talla, stockValue] of Object.entries(stockPorTalla)) {
+          const stockInt = stockValue === "" ? 0 : parseInt(stockValue, 10);
+          await pool.query(
+            'INSERT INTO stock_anillos (id_producto, id_talla, stock) VALUES (?, ?, ?)',
+            [id, id_talla, stockInt]
+          );
+        }
+      }
+
+
+
+    return new Response(JSON.stringify({ success: true, id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -161,6 +195,9 @@ export async function PUT(request) {
     const category = formData.get('category');
     const stock = parseInt(formData.get('stock'), 10);
     const active = formData.get('active') === 'true';
+    const stockPorTalla = formData.get('stockPorTalla')
+      ? JSON.parse(formData.get('stockPorTalla'))
+      : null;
 
     const image = formData.get('image');
     const image2 = formData.get('image2');
@@ -204,16 +241,21 @@ export async function PUT(request) {
     const setClause = Object.keys(updateFields).map(key => `${key} = ?`).join(', ');
     const values = [...Object.values(updateFields), id];
 
-    const [result] = await pool.query(`UPDATE ${table} SET ${setClause} WHERE ${idField} = ?`, values);
+    await pool.query(`UPDATE ${table} SET ${setClause} WHERE ${idField} = ?`, values);
 
-    if (result.affectedRows === 0) {
-      return new Response(JSON.stringify({ message: 'No se realizaron cambios en el producto' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // 🔹 Actualizar stock por talla
+    if (category === "Anillos" && stockPorTalla) {
+      for (const talla of stockPorTalla) {
+        await pool.query(
+          `INSERT INTO stock_anillos (id_producto, id_talla, stock) 
+           VALUES (?, ?, ?)
+           ON DUPLICATE KEY UPDATE stock = VALUES(stock)`,
+          [id, talla.id_talla, talla.stock]
+        );
+      }
     }
 
-    return new Response(JSON.stringify({ success: true, message: 'Producto actualizado correctamente', changes: result.affectedRows }), {
+    return new Response(JSON.stringify({ success: true, message: 'Producto actualizado correctamente' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

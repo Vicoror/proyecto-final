@@ -234,6 +234,14 @@ const DetallePedido = ({ pedido }) => {
             <div>
               <span className="font-medium">Precio unitario:</span> {formatPrecio(producto.precio_unitario)}
             </div>
+            {/* 🔹 MOSTRAR TALLA SI ES ANILLO */}
+            {producto.categoria === 'Anillos' && producto.talla && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                  💍 Anillo Talla: {producto.talla}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Materiales - NUEVA ESTRUCTURA */}

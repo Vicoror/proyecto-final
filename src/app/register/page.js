@@ -14,9 +14,11 @@ export default function RegisterPage() {
   const [passwordError, setPasswordError] = useState("");
   const [captchaToken, setCaptchaToken] = useState(null);
   const router = useRouter();
+  const [nameError, setNameError] = useState(""); 
+  const [emailError, setEmailError] = useState("");
 
   // Expresiones regulares
-  const regexName = /^(?!\s+$)[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{0,30}$/; 
+  const regexName = /^(?!\s+$)[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,30}$/; 
   // hasta 30 caracteres, solo letras y espacios, no solo espacios
 
   const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/; 
@@ -52,20 +54,36 @@ export default function RegisterPage() {
 };
 
 
-  // onChange con validaciones directas
-  const handleNameChange = (e) => {
-    const value = e.target.value;
-    if (regexName.test(value)) {
-      setName(value);
-    }
-  };
+// onChange con validación en tiempo real
+const handleNameChange = (e) => {
+  const value = e.target.value;
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value.trimStart(); // quita espacios al inicio
-    if (value.length <= 50) {
-      setEmail(value);
+  // Permitir letras y espacios mientras escribe
+  if (/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/.test(value)) {
+    setName(value);
+
+    // Validación mínima de 2 caracteres en tiempo real
+    if (value.length > 0 && value.length < 2) {
+      setNameError("El nombre debe tener al menos 2 caracteres");
+    } else {
+      setNameError(""); // sin error
     }
-  };
+  }
+};
+
+
+
+const handleEmailChange = (e) => {
+  const value = e.target.value.trimStart();
+  setEmail(value);
+  if (value === "") {
+    setEmailError("El correo es obligatorio");
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+    setEmailError("Correo no válido");
+  } else {
+    setEmailError(""); 
+  }
+};
 
   const handlePasswordChange = (e) => {
     const value = e.target.value;
@@ -159,25 +177,35 @@ export default function RegisterPage() {
 
         {/* Formulario */}
         <form onSubmit={handleRegister} className="mt-4">
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={name}
-            onChange={handleNameChange}
-            maxLength={30}
-            className="block w-full p-2 border border-[#8C9560] rounded-md mb-3 text-[#762114] font-serif"
-            required
-          />
+           <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={name}
+                onChange={handleNameChange}
+                maxLength={30}
+                className={`block w-full p-2 border rounded-md font-serif ${
+                  nameError ? "border-red-500" : "border-[#8C9560]"
+                } text-[#762114]`}
+                required
+              />
+              {nameError && <p className="text-xs text-red-600 text-left mb-2">{nameError}</p>} 
+            </div>
 
-          <input
-            type="email"
-            placeholder="Correo"
-            value={email}
-            onChange={handleEmailChange}
-            maxLength={50}
-            className="block w-full p-2 border border-[#8C9560] rounded-md mb-3 text-[#762114] font-serif"
-            required
-          />
+            <div className="mb-3">
+              <input
+                type="email"
+                placeholder="Correo"
+                value={email}
+                onChange={handleEmailChange}
+                maxLength={50}
+                className={`block w-full p-2 border rounded-md font-serif ${
+                  emailError ? "border-red-500" : "border-[#8C9560]"
+                } text-[#762114]`}
+                required
+              />
+              {emailError && <p className="text-xs text-red-600 text-left mb-2">{emailError}</p>} {/* <-- agregado */}
+            </div>
 
           <div className="relative">
             <input

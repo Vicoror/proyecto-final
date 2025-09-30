@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiX, FiPackage, FiZoomIn, FiArrowLeft, FiArrowRight } from "react-icons/fi";
+import { FiX, FiZoomIn, FiArrowRight } from "react-icons/fi";
 import Image from "next/image";
 import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
 import IconoCarrito from "@/components/IconoCarrito";
@@ -10,25 +10,49 @@ import { useRouter } from "next/navigation";
 
 export default function VerProducto({ idProducto, onClose }) {
   const [producto, setProducto] = useState(null);
+  const [stockTallas, setStockTallas] = useState([]);
+  const [selectedTalla, setSelectedTalla] = useState("");
   const [error, setError] = useState("");
   const [imagenSeleccionadaIndex, setImagenSeleccionadaIndex] = useState(null);
   const [isButtonGlowing, setIsButtonGlowing] = useState(false);
+  const [mostrarTallas, setMostrarTallas] = useState(false);
   const router = useRouter();
+  const stockSeleccionado = stockTallas.find(t => t.talla === selectedTalla);
+  const [fotoTallas, setFotoTallas] = useState("");
 
   useEffect(() => {
     if (!idProducto) return;
+
     const fetchProducto = async () => {
       try {
         const res = await fetch(`/api/productos?id=${idProducto}`);
         if (!res.ok) throw new Error("No se pudo obtener el producto.");
         const data = await res.json();
         setProducto(data);
+
+        if (data.categoria === "Anillos") {
+          const resTallas = await fetch(`/api/tallas_anillos?id_producto=${idProducto}`);
+          if (!resTallas.ok) throw new Error("No se pudo obtener las tallas del producto.");
+          const dataTallas = await resTallas.json();
+          const tallasDisponibles = dataTallas.filter(t => t.stock >= 1);
+          setStockTallas(tallasDisponibles);
+          if (tallasDisponibles.length > 0) setSelectedTalla(tallasDisponibles[0].talla);
+        }
       } catch (err) {
+        console.error(err);
         setError("Error al cargar el producto.");
       }
     };
+
     fetchProducto();
   }, [idProducto]);
+
+      useEffect(() => {
+        fetch('/api/whatsapp-config')
+          .then(res => res.json())
+          .then(data => setFotoTallas(data.foto_tallas_anillos || ""))
+          .catch(err => console.error('Error:', err));
+      }, []);
 
   const handlePersonalizarClick = () => {
     setIsButtonGlowing(true);
@@ -49,21 +73,46 @@ export default function VerProducto({ idProducto, onClose }) {
     image2: producto.imagen2,
     image3: producto.imagen3,
     stock: producto.stock,
-    activar_botn: producto.activar_botn // Asegurar que tenemos este campo
+    activar_botn: producto.activar_botn
   };
+
+  // CORREGIDO: Asegurar que productoCarrito tenga la talla correctamente
+  const productoCarrito = {
+    id: producto.id_productos,
+    name: producto.nombre,
+    price: producto.precio,
+    description: producto.descripcion,
+    image: producto.imagen,
+    image2: producto.imagen2,
+    image3: producto.imagen3,
+    categoria: producto.categoria,
+    talla: selectedTalla, // ← ESTO ES ESENCIAL
+    stock: producto.categoria === "Anillos"
+      ? (stockSeleccionado?.stock || 0)
+      : producto.stock,
+    id_stock: stockSeleccionado?.id_stock || null,
+    uniqueId: producto.categoria === "Anillos"
+      ? `${producto.id_productos}-${stockSeleccionado?.id_stock || 0}-${selectedTalla}`
+      : String(producto.id_productos)
+  };
+
+
+console.log("🔍 DEBUG productoCarrito:", {
+  nombre: producto.nombre,
+  categoria: producto.categoria,
+  id: producto.id_productos,
+  selectedTalla: selectedTalla,
+  id_stock: stockSeleccionado?.id_stock,
+  stockSeleccionado: stockSeleccionado,
+  productoCarrito: {
+    talla: productoCarrito.talla,
+    id_stock: productoCarrito.id_stock,
+    uniqueId: productoCarrito.uniqueId,
+    stock: productoCarrito.stock
+  }
+});
 
   const imagenes = [prod.image, prod.image2, prod.image3].filter(Boolean);
-  const imagenSeleccionada = imagenes[imagenSeleccionadaIndex];
-
-  const siguienteImagen = () => {
-    setImagenSeleccionadaIndex((prev) => (prev + 1) % imagenes.length);
-  };
-
-  const anteriorImagen = () => {
-    setImagenSeleccionadaIndex((prev) => (prev - 1 + imagenes.length) % imagenes.length);
-  };
-
-  console.log("🚀 Producto preparado para agregar:", prod);
 
   return (
     <div className="fixed inset-0 bg-white bg-opacity-40 z-50 flex justify-center items-center px-4 overflow-y-auto py-10">
@@ -118,23 +167,69 @@ export default function VerProducto({ idProducto, onClose }) {
         <p className="text-md mb-2 text-justify">{prod.description}</p>
         <p className="text-[#DC9C5C] text-xl font-bold mb-3">${prod.price}</p>
 
-        {prod.stock > 0 ? (
-          <div className="flex items-center text-sm text-green-700 bg-green-100 rounded p-2 mb-4">
-            <FiPackage className="mr-2" /> {prod.stock} piezas disponibles
-          </div>
-        ) : (
-          <div className="flex items-center text-sm text-red-700 bg-red-100 rounded p-2 mb-4">
-            <FiPackage className="mr-2" /> Pronto tendremos piezas disponibles
+        {/* Mostrar stock por tallas si es anillo */}
+        {producto?.categoria === "Anillos" && stockTallas.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-[#7B2710] font-semibold mb-2">Seleccione talla</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedTalla}
+                onChange={(e) => setSelectedTalla(e.target.value)}
+                className="w-full p-2 border border-[#8C9560] rounded-md"
+              >
+                {stockTallas.map((t) => (
+                  <option key={`${producto.id_productos}-${t.id_stock}`} value={t.talla}>
+                    {t.talla} ({t.stock} disponibles)
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setMostrarTallas(true)}
+                className="px-2 py-1 bg-[#8C9560] text-white text-sm rounded hover:bg-[#DC9C5C] transition"
+              >
+                Ver tallas
+              </button>
+            </div>
+
+           {mostrarTallas && (
+            <div className="fixed inset-0 flex justify-center items-center z-50 pointer-events-none">
+              <div className="relative z-10 pointer-events-auto">
+                <button
+                  onClick={() => setMostrarTallas(false)}
+                  className="absolute -top-8 -right-8 bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg text-gray-700 hover:text-red-500 text-lg border border-gray-300"
+                >
+                  ×
+                </button>
+                <img
+                  src={fotoTallas || "/ruta-imagen-tallas-default.png"}
+                  alt="Guía de tallas"
+                  className="max-w-[280px] max-h-[350px] object-contain rounded-lg shadow-xl border border-gray-200"
+                />
+              </div>
+            </div>
+          )}
           </div>
         )}
 
-        {/* Botón de agregar al carrito */}
-        <BotonAgregarCarrito 
-          producto={prod} 
-          className="w-full py-2 rounded-lg text-white font-semibold transition-colors bg-[#762114] hover:bg-[#DC9C5C] mb-4" 
-        />
+        {/* Botón de agregar al carrito - CONDICIÓN SIMPLIFICADA */}
+        {producto?.categoria === "Anillos" && stockTallas.length > 0 && (
+          <BotonAgregarCarrito
+            producto={productoCarrito} // ← Ya incluye la talla en producto.talla
+            className="w-full py-2 rounded-lg text-white font-semibold transition-colors bg-[#762114] hover:bg-[#DC9C5C] mb-4"
+          />
+        )}
 
-        {/* Botón de personalización - Solo se muestra si activar_botn es verdadero */}
+        {/* Para productos que no son anillos */}
+        {producto?.categoria !== "Anillos" && (
+          <BotonAgregarCarrito
+            producto={productoCarrito}
+            className="w-full py-2 rounded-lg text-white font-semibold transition-colors bg-[#762114] hover:bg-[#DC9C5C] mb-4"
+          />
+        )}
+
+        {/* Botón de personalización */}
         {prod.activar_botn === 1 && (
           <div className="text-center my-4">
             <motion.button
@@ -147,7 +242,7 @@ export default function VerProducto({ idProducto, onClose }) {
             >
               Personalizar mi joya <FiArrowRight className="ml-2" />
               {isButtonGlowing && (
-                <motion.span 
+                <motion.span
                   className="absolute inset-0 rounded-lg bg-[#DC9C5C] opacity-0"
                   animate={{ opacity: [0, 0.5, 0], scale: [1, 1.1, 1.2] }}
                   transition={{ duration: 1 }}
@@ -157,60 +252,6 @@ export default function VerProducto({ idProducto, onClose }) {
           </div>
         )}
       </div>
-
-      {imagenSeleccionadaIndex !== null && (
-        <div className="fixed inset-0 bg-[#762114] bg-opacity-70 z-50 flex justify-center items-center px-4">
-          <button
-            onClick={() => setImagenSeleccionadaIndex(null)}
-            className="absolute top-5 left-5 text-white text-4xl hover:text-[#DC9C5C]"
-          >
-            <FiArrowLeft />
-          </button>
-
-          {/* Flecha anterior */}
-          {imagenSeleccionadaIndex > 0 && (
-            <button
-              onClick={() => setImagenSeleccionadaIndex((prev) => prev - 1)}
-              className="absolute left-5 md:left-80 text-white text-4xl hover:text-[#DC9C5C] top-30"
-              aria-label="Imagen anterior"
-            >
-              <FiArrowLeft />
-            </button>
-          )}
-
-          {/* Imagen ampliada */}
-          <Image
-            src={imagenes[imagenSeleccionadaIndex]}
-            alt="Imagen ampliada"
-            width={600}
-            height={600}
-            className="max-w-full max-h-[90vh] rounded-lg object-contain shadow-xl"
-          />
-
-          {/* Flecha siguiente */}
-          {imagenSeleccionadaIndex < imagenes.length - 1 && (
-            <button
-              onClick={() => setImagenSeleccionadaIndex((prev) => prev + 1)}
-              className="absolute right-5 md:right-80 text-white text-4xl hover:text-[#DC9C5C] top-30"
-              aria-label="Siguiente imagen"
-            >
-              <FiArrowRight />
-            </button>
-          )}
-        </div>
-      )}
-      
-      {/* Estilos para la animación de glow */}
-      <style jsx>{`
-        @keyframes glow {
-          0% { box-shadow: 0 0 5px #DC9C5C; }
-          50% { box-shadow: 0 0 20px #DC9C5C, 0 0 30px #DC9C5C; }
-          100% { box-shadow: 0 0 5px #DC9C5C; }
-        }
-        .animate-glow {
-          animation: glow 1s ease-in-out;
-        }
-      `}</style>
     </div>
   );
 }

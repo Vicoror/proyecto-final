@@ -24,6 +24,8 @@ export default function EditarProducto() {
   const [success, setSuccess] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const router = useRouter();
+  const [tallas, setTallas] = useState([]);
+  const [stockPorTalla, setStockPorTalla] = useState({});
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -31,6 +33,79 @@ export default function EditarProducto() {
       router.replace("/login");
     }
   }, []);
+
+   useEffect(() => {
+  // Cargar catálogo de tallas cuando se renderiza la página
+  const fetchTallas = async () => {
+    try {
+      const res = await fetch("/api/tallas_anillos");
+      
+      // 🔹 VERIFICAR SI LA RESPUESTA ES VÁLIDA
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
+      }
+      
+      const text = await res.text();
+      console.log("📏 Respuesta cruda de tallas:", text);
+      
+      // 🔹 VERIFICAR QUE NO ESTÉ VACÍA
+      const data = text ? JSON.parse(text) : [];
+      
+      console.log("📏 Tallas cargadas:", data);
+      
+      setTallas(data); 
+      
+      // Inicializar stock en 0 para cada talla
+      const inicial = {};
+      data.forEach(t => inicial[t.id_talla] = 0);
+      setStockPorTalla(inicial);
+
+      // 🔹 CARGAR STOCK EXISTENTE SI ES ANILLO
+      if (productData.category === "Anillos" && productData.id) {
+        await cargarStockExistente(data, productData.id);
+      }
+    } catch (error) {
+      console.error("Error al cargar tallas:", error);
+      // 🔹 INICIALIZAR CON ARRAY VACÍO EN CASO DE ERROR
+      setTallas([]);
+      setStockPorTalla({});
+    }
+  };
+
+  // 🔹 FUNCIÓN MEJORADA PARA CARGAR STOCK EXISTENTE
+  const cargarStockExistente = async (tallasData, idProducto) => {
+    try {
+      const res = await fetch(`/api/tallas_anillos?id_producto=${productData.id}&mostrar_todas=true`);
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+      
+      const text = await res.text();
+      console.log("📦 Respuesta cruda de stock:", text);
+      
+      const stockExistente = text ? JSON.parse(text) : [];
+      
+      console.log("📦 Stock existente cargado:", stockExistente);
+      
+      // Crear copia del estado inicial
+      const stockActualizado = {};
+      tallasData.forEach(t => {
+        stockActualizado[t.id_talla] = 0; // Valor por defecto
+      });
+      
+      // Sobrescribir con valores existentes
+      stockExistente.forEach(item => {
+        stockActualizado[item.id_talla] = item.stock;
+      });
+      
+      setStockPorTalla(stockActualizado);
+    } catch (error) {
+      console.error('Error cargando stock existente:', error);
+    }
+  };
+
+  fetchTallas();
+}, [productData.category, productData.id]);
 
   // Validaciones
   const validateId = (id) => /^[a-zA-Z0-9_]{1,20}$/.test(id);
@@ -406,7 +481,7 @@ export default function EditarProducto() {
                       <p className="text-sm text-gray-600 mt-1">Rango: $20 - $5000</p>
                     </div>
 
-                    <div>
+                   <div>
                       <label className="block text-[#7B2710] font-semibold mb-2">Categoría</label>
                       <select
                         name="category"
@@ -432,23 +507,56 @@ export default function EditarProducto() {
                         )}
                       </select>
                     </div>
-                  </div>
 
-                  {selectedInterface === "principal" && (
-                    <div className="mb-4">
-                      <label className="block text-[#7B2710] font-semibold mb-2">Descripción</label>
-                      <textarea
-                        name="description"
-                        value={productData.description}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-[#8C9560] rounded-md"
-                        rows={4}
-                        required
-                        maxLength={300}
-                      />
-                      <p className="text-sm text-gray-600 mt-1">Máximo 300 palabras (300 caracteres)</p>
-                    </div>
-                  )}
+                    {/* 🔹 MOVER ESTA SECCIÓN FUERA DEL SELECT - después del cierre </select> */}
+                    {productData.category === "Anillos" && (
+                      <div className="w-full mt-4">
+                        <label className="block text-[#7B2710] font-semibold mb-2">
+                          Tallas y stock
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {tallas.map((t) => (
+                            <div key={t.id_talla} className="flex items-center gap-2">
+                              <span className="w-16">{t.talla}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={stockPorTalla[t.id_talla] ?? ""}
+                                onChange={(e) => {
+                                  let value = e.target.value;
+                                  value = value.replace(/\D/g, "");
+                                  if (value !== "" && parseInt(value) > 50) {
+                                    value = "50";
+                                  }
+                                  setStockPorTalla({
+                                    ...stockPorTalla,
+                                    [t.id_talla]: value === "" ? "" : parseInt(value),
+                                  });
+                                }}
+                                className="w-20 p-1 border border-[#8C9560] rounded-md"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedInterface === "principal" && (
+                      <div className="mb-4">
+                        <label className="block text-[#7B2710] font-semibold mb-2">Descripción</label>
+                        <textarea
+                          name="description"
+                          value={productData.description}
+                          onChange={handleInputChange}
+                          className="w-full p-2 border border-[#8C9560] rounded-md"
+                          rows={4}
+                          required
+                          maxLength={300}
+                        />
+                        <p className="text-sm text-gray-600 mt-1">Máximo 300 palabras (300 caracteres)</p>
+                      </div>
+                    )}
 
                   <div className="mb-4">
                     <label className="block text-[#7B2710] font-semibold mb-2">Imagen del Producto</label>
@@ -462,40 +570,43 @@ export default function EditarProducto() {
                     <p className="text-sm text-gray-600 mt-1">Tamaño máximo: 1500x1500px</p>
                   </div>
                     <div className="mb-4">
-        <label className="block text-[#7B2710] font-semibold mb-2">Imagen 2 (opcional)</label>
-        <input
-          type="file"
-          name="image2"
-          onChange={handleInputChange}
-          className="w-full p-2 border border-[#8C9560] rounded-md"
-          accept="image/*"
-        />
-      </div>
+                            <label className="block text-[#7B2710] font-semibold mb-2">Imagen 2 (opcional)</label>
+                            <input
+                              type="file"
+                              name="image2"
+                              onChange={handleInputChange}
+                              className="w-full p-2 border border-[#8C9560] rounded-md"
+                              accept="image/*"
+                            />
+                          </div>
 
-      <div className="mb-4">
-        <label className="block text-[#7B2710] font-semibold mb-2">Imagen 3 (opcional)</label>
-        <input
-          type="file"
-          name="image3"
-          onChange={handleInputChange}
-          className="w-full p-2 border border-[#8C9560] rounded-md"
-          accept="image/*"
-        />
-      </div>
+                          <div className="mb-4">
+                            <label className="block text-[#7B2710] font-semibold mb-2">Imagen 3 (opcional)</label>
+                            <input
+                              type="file"
+                              name="image3"
+                              onChange={handleInputChange}
+                              className="w-full p-2 border border-[#8C9560] rounded-md"
+                              accept="image/*"
+                            />
+                          </div>
 
-      <div className="mb-4">
-        <label className="block text-[#7B2710] font-semibold mb-2">Stock</label>
-        <input
-          type="number"
-          name="stock"
-          value={productData.stock ?? ""}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-[#8C9560] rounded-md"
-          min={0}
-          max={50}
-        />
-        <p className="text-sm text-gray-600 mt-1">Rango permitido: 0 a 50 unidades</p>
-      </div>
+      {/* 🔹 OCULTAR STOCK SI ES ANILLO */}
+          {productData.category !== "Anillos" && (
+            <div className="mb-4">
+              <label className="block text-[#7B2710] font-semibold mb-2">Stock</label>
+              <input
+                type="number"
+                name="stock"
+                value={productData.stock ?? ""}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-[#8C9560] rounded-md"
+                min={0}
+                max={50}
+              />
+              <p className="text-sm text-gray-600 mt-1">Rango permitido: 0 a 50 unidades</p>
+            </div>
+          )}
                   <div className="mb-6 flex items-center">
                     <input
                       type="checkbox"
@@ -523,6 +634,7 @@ export default function EditarProducto() {
                     >
                       Guardar Cambios
                     </button>
+                  </div>
                   </div>
                 </form>
               )}

@@ -16,35 +16,77 @@ const BotonAgregarCarrito = ({ producto, className = "" }) => {
     }
   }, [mostrarModal]);
 
-  const handleAgregar = () => {
-    console.log("Producto que se quiere agregar:", producto);
-    const existente = cartItems.find((item) => item.id === producto.id);
-    const cantidadActual = existente ? existente.quantity : 0;
-    const stockDisponible = Number(producto.stock);
-    console.log(producto)
-    if (cantidadActual + 1 > stockDisponible) {
-      setMensajeModal("Stock máximo alcanzado");
-    } else {
-      addToCart(producto);
-      setMensajeModal("¡Producto añadido al carrito!");
+const handleAgregar = () => {
+  // 🔍 DEBUG 1: Ver qué llega al botón
+  console.log("🔍 DEBUG BotonAgregarCarrito - INICIO:", {
+    nombre: producto.name,
+    categoria: producto.categoria,
+    talla: producto.talla,
+    id_stock: producto.id_stock,
+    stock: producto.stock,
+    productoCompleto: producto
+  });
+
+  // 🔹 Caso especial: Anillos - VERIFICACIÓN CORREGIDA
+  if (producto.categoria === "Anillos") {
+    
+    // Ahora verificamos producto.talla que viene desde VerProducto
+    if (!producto.talla) {
+      // 🔍 DEBUG 3: Error de talla
+      setMensajeModal("Seleccione una talla antes de agregar al carrito.");
+      setMostrarModal(true);
+      return;
+    }
+    
+    // 🔍 DEBUG 4: Talla correcta
+    
+    // 🔹 SOLO VERIFICAR STOCK SI NO ES PRODUCTO PERSONALIZADO
+    if (producto.tipo !== "personalizado") {
+      const stockDisponible = Number(producto.stock || 0);
+      if (stockDisponible <= 0) {
+        // 🔍 DEBUG 5: Error de stock
+        setMensajeModal("No hay stock disponible para esta talla.");
+        setMostrarModal(true);
+        return;
+      }
     }
 
+    addToCart(producto); // Ya incluye la talla correctamente
+    setMensajeModal("¡Producto añadido al carrito!");
     setMostrarModal(true);
-  };
+    return;
+  }
+
+  // 🔹 Para otros productos, lógica normal con stock
+  const existente = cartItems.find((item) => item.id === producto.id);
+  const cantidadActual = existente ? existente.quantity : 0;
+  const stockDisponible = Number(producto.stock);
+
+  if (stockDisponible <= 0) {
+    setMensajeModal("No hay stock disponible.");
+  } else if (cantidadActual + 1 > stockDisponible) {
+    setMensajeModal("Stock máximo alcanzado");
+  } else {
+    addToCart(producto);
+    setMensajeModal("¡Producto añadido al carrito!");
+  }
+
+  setMostrarModal(true);
+};
 
   return (
     <>
-       <button
-          onClick={handleAgregar}
-          disabled={producto.stock === 0}
-          className={`w-full py-2 rounded-lg text-white font-semibold transition-colors ${
-            producto.stock === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-[#762114] hover:bg-[#DC9C5C]"
-          } ${className}`}
-        >
-          Agregar al carrito
-        </button>
+      <button
+        onClick={handleAgregar}
+        disabled={producto.tipo !== "personalizado" && producto.stock === 0}
+        className={`w-full py-2 rounded-lg text-white font-semibold transition-colors ${
+          (producto.tipo !== "personalizado" && producto.stock === 0)
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#762114] hover:bg-[#DC9C5C]"
+        } ${className}`}
+      >
+        Agregar al carrito
+      </button>
 
       {mostrarModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30">

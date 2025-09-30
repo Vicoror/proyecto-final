@@ -498,31 +498,48 @@ export default function PaginaBase() {
             </div>
 
             <div>
-                <label className="block font-semibold text-[#7B2710]">Precio mano de obra ($)</label>
-                <input
-                  type="number"
-                  name="precioManoObra"
-                  value={formulario.precioManoObra}
-                  onChange={(e) => {
-                    const valor = e.target.value;
-                    // Solo permitir números enteros entre 30 y 5000
-                    if (valor === '' || (/^\d+$/.test(valor) && parseInt(valor) >= 0 && parseInt(valor) <= 5000)) {
-                      setFormulario({
-                        ...formulario,
-                        precioManoObra: valor
-                      });
+              <label className="block font-semibold text-[#7B2710]">Precio mano de obra ($)</label>
+              <input
+                type="number"
+                name="precioManoObra"
+                value={formulario.precioManoObra}
+                onChange={(e) => {
+                  const valor = e.target.value;
+
+                  // Permitir solo números enteros
+                  if (valor === '' || /^\d+$/.test(valor)) {
+                    setFormulario({
+                      ...formulario,
+                      precioManoObra: valor
+                    });
+
+                    // Validación en tiempo real
+                    if (valor !== '') {
+                      const numero = parseInt(valor);
+                      if (numero < 30) {
+                        setErrores({ ...errores, precioManoObra: 'Mínimo $30' });
+                      } else if (numero > 5000) {
+                        setErrores({ ...errores, precioManoObra: 'Máximo $5000' });
+                      } else {
+                        setErrores({ ...errores, precioManoObra: '' });
+                      }
+                    } else {
+                      setErrores({ ...errores, precioManoObra: '' }); // vacío no da error
                     }
-                  }}
-                  min="0"
-                  max="5000"
-                  className="w-full p-2 rounded border"
-                  placeholder="30-5000"
-        
-                />
-                {errores.precioManoObra && (
-                  <p className="text-red-500 text-sm mt-1">{errores.precioManoObra}</p>
-                )}
-              </div>
+                  }
+                }}
+                min="30"
+                max="5000"
+                className={`w-full p-2 rounded border ${
+                  errores.precioManoObra ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="30-5000"
+              />
+              {errores.precioManoObra && (
+                <p className="text-red-500 text-sm mt-1">{errores.precioManoObra}</p>
+              )}
+            </div>
+
 
             <div className="flex items-center gap-2">
               <label className="font-semibold text-[#7B2710]">¿Activar producto?</label>

@@ -106,6 +106,7 @@ export async function POST(req) {
         subtotal || 0,
         total || 0,
         metodoPago
+        
       ]
     );
     const pedidoId = pedidoResult.insertId;
@@ -135,34 +136,65 @@ export async function POST(req) {
           materialesJSON = JSON.stringify(item.materiales);
         }
 
-        await connection.execute(
-          `INSERT INTO purchase_items 
-           (pedido_id, tipo_producto, nombre_producto, precio_unitario, cantidad, subtotal, categoria, imagen_principal, id_producto_normal, stock_original, id_producto_personalizado, tiempo_entrega_original, precio_mano_obra_original, materiales) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            pedidoId,
-            tipoProducto,
-            nombre,
-            precio,
-            cantidad,
-            itemSubtotal,
-            categoria,
-            item.imagen || item.image || '',
-            item.tipo === 'personalizado' ? null : item.id,
-            item.stock || null,
-            item.tipo === 'personalizado' ? item.id_ProPer || null : null,
-            item.tiempoEntrega || null,
-            item.PrecioManoObra || null,
-            materialesJSON
-          ]
-        );
+          console.log('Item a insertar:', item);
 
-        if (tipoProducto === 'normal' && item.id) {
+await connection.execute(
+  `INSERT INTO purchase_items 
+   (pedido_id, tipo_producto, nombre_producto, precio_unitario, cantidad, subtotal, categoria, imagen_principal, id_producto_normal, stock_original, id_producto_personalizado, tiempo_entrega_original, precio_mano_obra_original, materiales, talla) 
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    pedidoId,
+    tipoProducto,
+    nombre,
+    precio,
+    cantidad,
+    itemSubtotal,
+    categoria,
+    item.imagen || item.image || '',
+    item.tipo === 'personalizado' ? null : item.id,
+    item.stock || null,
+    item.tipo === 'personalizado' ? item.id_ProPer || null : null,
+    item.tiempoEntrega || null,
+    item.PrecioManoObra || null,
+    materialesJSON,
+    item.talla || null
+  ]
+);
+
+      // Descontar stock productos normales
+      if (tipoProducto === 'normal' && item.id && item.categoria !== 'Anillos') {
+        console.log('Descontando stock producto normal:', item.id, cantidad);
+        await connection.execute(
+          `UPDATE productos SET stock = stock - ? WHERE id_productos = ? AND stock >= ?`,
+          [cantidad, item.id, cantidad]
+        );
+      }
+
+// Descontar stock anillos
+        if (item.categoria === 'Anillos' && item.talla) {
+          console.log('Descontando stock anillos:', item.id, item.talla, cantidad);
           await connection.execute(
-            `UPDATE productos SET stock = stock - ? WHERE id_productos = ? AND stock >= ?`,
-            [cantidad, item.id, cantidad]
+            `UPDATE stock_anillos 
+            SET stock = stock - ? 
+            WHERE id_stock = ? AND stock >= ?`,
+            [cantidad, item.id_stock, cantidad]
           );
         }
+// Después de descontar stock anillos
+console.log('✅ Stock descontado para anillo:', {
+  id_producto: item.id,
+  id_stock: item.id_stock,
+  talla: item.talla,
+  cantidad_descontada: cantidad
+});
+
+// Verificar stock actual
+const [stockActual] = await connection.execute(
+  `SELECT stock FROM stock_anillos WHERE id_stock = ?`,
+  [item.id_stock]
+);
+console.log('📦 Stock actualizado:', stockActual[0].stock);
+
       } catch (itemError) {
         console.error('Error insertando item:', itemError);
       }
@@ -187,10 +219,11 @@ export async function POST(req) {
         imagenTag = `<img src="${i.imagen || i.image}" alt="${i.nombre || i.name}" style="max-width:150px;"/>`;
       }
       return `<div style="margin-bottom:10px">
-                <p><b>${i.nombre || i.name}</b> x ${i.quantity || 1} → $${(i.price || i.precio) * (i.quantity || 1)}</p>
-                ${materialesText}
-                ${imagenTag}
-              </div>`;
+          <p><b>${i.nombre || i.name}</b> x ${i.quantity || 1} → $${(i.price || i.precio) * (i.quantity || 1)}</p>
+          ${i.talla ? `<p><b>Talla:</b> ${i.talla}</p>` : ''}
+          ${materialesText}
+          ${imagenTag}
+        </div>`;
     }).join("");
 
     const resumenHTML = `

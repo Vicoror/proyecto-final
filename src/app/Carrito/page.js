@@ -141,7 +141,8 @@ useEffect(() => {
 
   // Resumen de compra
   if (mostrarResumenCompra) { return (
-  <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
+<div className="fixed inset-0 z-50 flex justify-end  bg-[radial-gradient(circle,rgba(220,156,92,0.2)_0%,rgba(220,156,92,0.7)_100%)]">
+  <div className="w-[400px] bg-[#F5F1F1] shadow-lg p-4 overflow-y-auto transition-all">
     <div className="flex justify-between items-center">
       <button
         onClick={handleVolverAlCarrito}
@@ -155,44 +156,44 @@ useEffect(() => {
       Resumen de tu compra
     </h2>
 
-    <div className="space-y-4 mb-6">
-      {cartItems.map((item) => (
-        <div key={item.id} className="border-b py-3">
-          <div className="flex gap-3">
-            {item.image || item.imagen ? (
-              <Image
-                src={item.image || item.imagen}
-                alt={item.name || item.nombre || "Producto"}
-                width={80}
-                height={60}
-                className="rounded object-cover"
-              />
-            ) : (
-              <div className="w-15 h-15 bg-gray-200 rounded" />
-            )}
-
-            <div className="flex-grow">
-              <h3 className="font-semibold text-sm">
-                {item.name || item.nombre}
-              </h3>
-              {item.talla && (
-                <p className="text-xs text-gray-600">Talla: {item.talla}</p>
+      <div className="space-y-4 mb-6">
+        {cartItems.map((item) => (
+          <div key={item.uniqueId} className="border-b py-3">
+            <div className="flex gap-3">
+              {item.image || item.imagen ? (
+                <Image
+                  src={item.image || item.imagen}
+                  alt={item.name || item.nombre || "Producto"}
+                  width={80}
+                  height={60}
+                  className="rounded object-cover"
+                />
+              ) : (
+                <div className="w-15 h-15 bg-gray-200 rounded" />
               )}
-              <p className="text-xs text-gray-600">
-                Cantidad: {item.quantity} × $
-                {Number(item.precio || item.price || 0).toFixed(2)}
-              </p>
-              <p className="text-xs text-gray-600">
-                Subtotal: $
-                {(
-                  (Number(item.precio || item.price || 0) || 0) * item.quantity
-                ).toFixed(2)}
-              </p>
+
+              <div className="flex-grow">
+                <h3 className="font-semibold text-sm">
+                  {item.name || item.nombre}
+                </h3>
+                {item.talla && (
+                  <p className="text-xs text-gray-600">Talla: {item.talla}</p>
+                )}
+                <p className="text-xs text-gray-600">
+                  Cantidad: {item.quantity} × $
+                  {Number(item.precio || item.price || 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Subtotal: $
+                  {(
+                    (Number(item.precio || item.price || 0) || 0) * item.quantity
+                  ).toFixed(2)}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
 
     <div className="border-t pt-4">
       <div className="flex justify-between mb-2">
@@ -267,13 +268,15 @@ useEffect(() => {
 )}
 
   </div>
+  </div>
 )}
 
 
   // Formulario de pago
   if (mostrarFormularioPago) {
     return (
-      <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
+      <div className="fixed inset-0 z-50 flex justify-end  bg-[radial-gradient(circle,rgba(220,156,92,0.2)_0%,rgba(220,156,92,0.7)_100%)]">
+        <div className="w-[400px] bg-[#F5F1F1] shadow-lg p-4 overflow-y-auto transition-all">
         <div className="flex justify-between items-center">
           <button
             onClick={handleVolverAlCarrito}
@@ -319,13 +322,15 @@ useEffect(() => {
     </Elements>
         )}
       </div>
+    </div>
     );
   }
 
   // Vista normal del carrito
   return (
 
-    <div className="fixed top-0 right-0 inset-y-0 w-[400px] bg-[#F5F1F1] shadow-lg z-50 p-4 overflow-y-auto transition-all">
+   <div className="fixed inset-0 z-50 flex justify-end  bg-[radial-gradient(circle,rgba(220,156,92,0.2)_0%,rgba(220,156,92,0.7)_100%)]">
+     <div className="w-[400px] bg-[#F5F1F1] shadow-lg p-4 overflow-y-auto transition-all">
       <div className="flex justify-between items-center">
         <Link href="/">
           <span
@@ -370,7 +375,7 @@ useEffect(() => {
       {cartItems
         .filter((p) => p.tipo !== "personalizado")
         .map((item) => (
-          <div key={`normal-${item.id}`} className="border-b py-3">
+          <div key={item.uniqueId} className="border-b py-3">
             <div className="flex gap-3">
               {item.image ? (
                 <Image
@@ -392,7 +397,7 @@ useEffect(() => {
                 <p className="text-xs text-gray-600">Precio: ${item.price}</p>
                 <div className="flex items-center mt-1 gap-2">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                     className="px-2 border rounded text-sm"
                   >
@@ -400,14 +405,14 @@ useEffect(() => {
                   </button>
                   <span className="text-sm">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                     onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)}
                     disabled={item.quantity >= Number(item.stock)}
                     className="px-2 border rounded text-sm"
                   >
                     +
                   </button>
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.uniqueId)}
                     className="ml-auto text-red-500 text-sm hover:text-red-700"
                     aria-label={`Eliminar ${item.name} del carrito`}
                   >
@@ -423,86 +428,96 @@ useEffect(() => {
         Productos Personalizados
       </h2>
       {cartItems
-        .filter((p) => p.tipo === "personalizado")
-        .map((item) => {
-          const materiales = Array.isArray(item.materiales)
-            ? item.materiales
-            : typeof item.materiales === "string"
-              ? item.materiales.split(",")
-              : [];
+  .filter((p) => p.tipo === "personalizado")
+  .map((item) => {
+    const materiales = Array.isArray(item.materiales)
+      ? item.materiales
+      : typeof item.materiales === "string"
+        ? item.materiales.split(",")
+        : [];
 
-          return (
-            <div key={`personalizado-${item.id}`} className="border-b py-3">
-              <div className="flex gap-3">
-                {item.imagen ? (
-                  <Image
-                    src={item.imagen}
-                    alt={item.name || "Producto"}
-                    width={80}
-                    height={60}
-                    className="rounded object-cover"
-                  />
-                ) : (
-                  <div className="w-[60px] h-[60px] bg-gray-200 rounded" />
-                )}
+    return (
+      <div key={item.uniqueId} className="border-b py-3">
+        <div className="flex gap-3">
+          {item.imagen ? (
+            <Image
+              src={item.imagen}
+              alt={item.name || "Producto"}
+              width={80}
+              height={60}
+              className="rounded object-cover"
+            />
+          ) : (
+            <div className="w-[60px] h-[60px] bg-gray-200 rounded" />
+          )}
 
-                <div className="flex-grow">
-                  <h3 className="font-semibold text-sm">{item.nombre}</h3>
-                  <p className="text-xs text-gray-600">
-                    Materiales:{" "}
-                    {item.materiales &&
-                      Object.entries(item.materiales)
-                        .map(([key, valor]) => {
-                          const nombresVisibles = {
-                            metale: "Metal",
-                            piedra: "Piedra",
-                            hilo: "Hilo",
-                      };
+          <div className="flex-grow">
+            <h3 className="font-semibold text-sm">{item.nombre}</h3>
+            
+            {/* 🔹 AGREGAR TALLA SI ES ANILLO PERSONALIZADO */}
+            {item.categoria === "Anillos" && item.talla && (
+              <p className="text-xs text-gray-600">Talla: {item.talla}</p>
+            )}
+            
+            <p className="text-xs text-gray-600">
+              Materiales:{" "}
+              {item.materiales &&
+                Object.entries(item.materiales)
+                  .map(([key, valor]) => {
+                    const nombresVisibles = {
+                      metale: "Metal",
+                      piedra: "Piedra",
+                      hilo: "Hilo",
+                    };
 
-                          const nombre =
-                            typeof valor === "object"
-                              ? valor?.nombre || valor?.color
-                              : valor;
+                    const nombre =
+                      typeof valor === "object"
+                        ? valor?.nombre || valor?.color
+                        : valor;
 
-                          if (!nombre) return null;
+                    if (!nombre) return null;
 
-                          return `${nombresVisibles[key] || key}: ${nombre}`;
-                        })
-                        .filter(Boolean)
-                        .join(", ")}
-                  </p>
+                    return `${nombresVisibles[key] || key}: ${nombre}`;
+                  })
+                  .filter(Boolean)
+                  .join(", ")}
+            </p>
 
-                  <p className="text-xs text-gray-600">Precio: ${item.precio}</p>
+            <p className="text-xs text-gray-600">Precio: ${item.precio}</p>
 
-                  <div className="flex items-center mt-1 gap-2">
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                      className="px-2 border rounded text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      disabled={item.quantity >= 10}
-                      className="px-2 border rounded text-sm"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="ml-auto text-red-500 text-sm hover:text-red-700"
-                      aria-label={`Eliminar ${item.nombre} del carrito`}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center mt-1 gap-2">
+              {/* Disminuir cantidad */}
+              <button
+                onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)}
+                disabled={item.quantity <= 1}
+                className="px-2 border rounded text-sm"
+              >
+                -
+              </button>
+
+              <span className="text-sm">{item.quantity}</span>
+
+              <button
+                onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)}
+                disabled={item.quantity >= 5} 
+                className="px-2 border rounded text-sm"
+              >
+                +
+              </button>
+
+              <button
+                onClick={() => removeItem(item.uniqueId)}
+                className="ml-auto text-red-500 text-sm hover:text-red-700"
+                aria-label={`Eliminar ${item.name} del carrito`}
+              >
+                🗑
+              </button>
             </div>
-          );
-        })}
+          </div>
+        </div>
+      </div>
+    );
+  })}
 
       <h2 className="text-lg font-bold text-[#762114] mt-6 mb-4">
         Escoge tipo de envio
@@ -561,6 +576,7 @@ useEffect(() => {
         </button>
       </div>
     </div>
+  </div>
 
   );
 };

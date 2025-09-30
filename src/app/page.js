@@ -185,37 +185,57 @@ export default function Home() {
           </h2>
           <hr className="mb-3 md:mb-4 border-t border-[#8C956040]" />
           <div className="flex overflow-x-auto pb-4 space-x-3 sm:space-x-4 md:space-x-6 p-2 md:p-4 relative z-0 scrollbar-hide">
-            {items.map((producto, index) => {
-              return (
-                <div
-                  key={producto.id || index}
-                  className="relative min-w-[140px] sm:min-w-[160px] md:min-w-[180px] lg:min-w-[200px] max-w-[220px] bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform duration-300 hover:scale-105 flex-shrink-0 h-[260px] sm:h-[260px] md:h-[300px] lg:h-[280px]"
-                >
-                  <img
-                    src={producto.image && producto.image.trim() !== "" ? producto.image : "/placeholder.jpg"}
-                    alt={producto.name || "Producto"}
-                    onClick={() => setVerProductoId(producto.id)}
-                    className="w-full h-36 object-cover object-center rounded-lg transition-transform duration-300 hover:scale-105"
-                  />
+              {items.map((producto, index) => {
+              
+                const productoMapeado = {
+                  // Propiedades básicas
+                  id: producto.id,
+                  id_productos: producto.id,
+                  name: producto.name,
+                  nombre: producto.name,
+                  price: producto.price,
+                  precio: producto.price,
+                  image: producto.image,
+                  imagen: producto.image,
+                  description: producto.description || "",
+                  stock: producto.stock || 10, // valor por defecto
+                
+                  categoria: producto.categoria || categoria, // ← USAR la categoría de la sección
+                  talla: producto.talla,     // para anillos
+                  id_stock: producto.id_stock // para anillos
+                };
 
-                  <div className="flex-grow flex flex-col justify-between mt-2">
-                    <div className="relative group">
-                      <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center cursor-pointer line-clamp-2">
-                        {truncateText(producto.name, 18)}
-                      </h3>
-                      <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 w-max max-w-[200px] px-2 py-1 bg-white border border-gray-200 shadow-lg rounded-md text-xs text-gray-800 opacity-0 pointer-events-none transition-all duration-150 group-hover:opacity-100">
-                        {producto.name}
+                return (
+                  <div
+                    key={producto.id || index}
+                    className="relative min-w-[140px] sm:min-w-[160px] md:min-w-[180px] lg:min-w-[200px] max-w-[220px] bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform duration-300 hover:scale-105 flex-shrink-0 h-[260px] sm:h-[260px] md:h-[300px] lg:h-[280px]"
+                  >
+                    <img
+                      src={producto.image && producto.image.trim() !== "" ? producto.image : "/placeholder.jpg"}
+                      alt={producto.name || "Producto"}
+                      onClick={() => setVerProductoId(producto.id)}
+                      className="w-full h-36 object-cover object-center rounded-lg transition-transform duration-300 hover:scale-105"
+                    />
+
+                    <div className="flex-grow flex flex-col justify-between mt-2">
+                      <div className="relative group">
+                        <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center cursor-pointer line-clamp-2">
+                          {truncateText(producto.name, 18)}
+                        </h3>
+                        <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 w-max max-w-[200px] px-2 py-1 bg-white border border-gray-200 shadow-lg rounded-md text-xs text-gray-800 opacity-0 pointer-events-none transition-all duration-150 group-hover:opacity-100">
+                          {producto.name}
+                        </div>
                       </div>
+                      <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
+                        ${producto.price}
+                      </p>
+                      {/* 🔹 Pasar el producto MAPEADO */}
+                      <BotonAgregarCarrito producto={productoMapeado} /> 
                     </div>
-                    <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
-                      ${producto.price}
-                    </p>
-                    <BotonAgregarCarrito producto={producto} />
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
         </section>
       ))} 
       

@@ -7,55 +7,100 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
 
+  // 🔹 Agregar producto al carrito
   const addToCart = (producto) => {
-  setCartItems((prev) => {
-    const existente = prev.find(
-      (item) => (item.id || item.id) === (producto.id || producto.id)
-    );
+    setCartItems((prev) => {
+      // 🔹 Crear ID único
+      const uniqueId =
+        producto.categoria === "Anillos"
+          ? `${producto.id}-${producto.id_stock || "0"}-${producto.talla || "0"}`
+          : producto.tipo === "personalizado"
+          ? `${producto.id}-${Date.now()}` // productos personalizados únicos por tiempo
+          : `${producto.id}`;
 
-    if (existente) {
-      if (existente.quantity + 1 > Number(producto.stock)) return prev;
-      return prev.map((item) =>
-        (item.id || item.id) === (producto.id || producto.id)
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-    }
+      // 🔹 DEBUG: Ver qué se está generando
+      console.log("🛒 DEBUG addToCart:", {
+        producto: producto.name,
+        categoria: producto.categoria,
+        id: producto.id,
+        id_stock: producto.id_stock,
+        talla: producto.talla,
+        uniqueIdGenerado: uniqueId
+      });
 
-    return [...prev, { ...producto, quantity: 1 }];
-  });
-};
+      // 🔹 Buscar producto existente
+      const stockDisponible = Number(producto.stock || 0);
 
+      // 🔹 Buscar producto existente
+      const existe = prev.find((item) => item.uniqueId === uniqueId);
 
-  const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+      if (existe) {
+        if (producto.tipo !== "personalizado" && existe.quantity + 1 > stockDisponible)
+          return prev; // solo checar stock en productos normales
+        return prev.map((item) =>
+          item.uniqueId === uniqueId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+
+      // 🔹 CORREGIDO: Guardar tanto talla como id_stock
+      return [...prev, { 
+        ...producto, 
+        quantity: 1, 
+        uniqueId,  
+        talla: producto.talla || null,
+        id_stock: producto.id_stock || null  // ← ESTO FALTABA
+      }];
+    });
   };
 
-  const updateQuantity = (id, newQuantity) => {
+  // 🔹 Eliminar producto
+  const removeItem = (uniqueId) => {
+    setCartItems((prev) => prev.filter((item) => item.uniqueId !== uniqueId));
+  };
+
+  // 🔹 Actualizar cantidad
+  const updateQuantity = (uniqueId, newQuantity) => {
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantity:
-                newQuantity < 1
-                  ? 1
-                  : newQuantity > Number(item.stock)
-                  ? Number(item.stock)
-                  : newQuantity,
-            }
-          : item
-      )
+      prev.map((item) => {
+        if (item.uniqueId !== uniqueId) return item;
+
+        // Para productos normales, limitar por stock
+        if (item.tipo !== "personalizado") {
+          const stockDisponible = Number(item.stock || 0);
+          return {
+            ...item,
+            quantity:
+              newQuantity < 1
+                ? 1
+                : newQuantity > stockDisponible
+                ? stockDisponible
+                : newQuantity,
+          };
+        }
+
+        // Para personalizados, permitir incrementar libremente (o poner un límite alto)
+        return {
+          ...item,
+          quantity: newQuantity < 1 ? 1 : newQuantity > 99 ? 99 : newQuantity,
+        };
+      })
     );
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  // 🔹 Limpiar carrito
+  const clearCart = () => setCartItems([]);
 
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, removeItem, updateQuantity, clearCart }}
+      value={{
+        cartItems,
+        addToCart,
+        removeItem,
+        updateQuantity,
+        clearCart,
+      }}
     >
       {children}
     </CartContext.Provider>

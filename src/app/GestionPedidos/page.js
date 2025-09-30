@@ -16,6 +16,10 @@ export default function GestionPedidos() {
   const [numGuia, setNumGuia] = useState("");
   const [mensajeCorreo, setMensajeCorreo] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [errorEmpresa, setErrorEmpresa] = useState("");
+  const [errorNumGuia, setErrorNumGuia] = useState(""); 
+  const [errorMensajeCorreo, setErrorMensajeCorreo] = useState(""); 
+
 
   // Protección de ruta
   useEffect(() => {
@@ -305,129 +309,135 @@ export default function GestionPedidos() {
         
         <h4 className="font-semibold text-[#8C9560] mb-4">Productos</h4>
         <div className="space-y-4">
-          {pedidoSeleccionado.items && pedidoSeleccionado.items.map((item, index) => {
-            // Los materiales ya vienen procesados desde la API en esta estructura:
-            // { hilo: {...} || null, metal: null, metale: {...} || null, piedra: {...} || null }
-            const materiales = item.materiales || {};
+  {pedidoSeleccionado.items && pedidoSeleccionado.items.map((item, index) => {
+    const materiales = item.materiales || {};
+    
+    const tieneMateriales = 
+      (materiales.hilo !== null && materiales.hilo !== undefined) ||
+      (materiales.metale !== null && materiales.metale !== undefined) ||
+      (materiales.piedra !== null && materiales.piedra !== undefined);
+    
+    return (
+      <div key={index} className="flex items-start gap-4 border border-gray-200 rounded-lg p-4">
+        {/* Imagen del producto */}
+        <img
+          src={item.imagen_principal || "/placeholder.jpg"}
+          alt={item.nombre_producto}
+          className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+          onError={(e) => {
+            e.target.src = "/placeholder.jpg";
+          }}
+        />
+        
+        <div className="flex-1">
+          <h5 className="font-medium text-[#7B2710]">{item.nombre_producto}</h5>
+          <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-gray-600">
+            <div>
+              <span className="font-medium">Cantidad:</span> {item.cantidad}
+            </div>
+            <div>
+              <span className="font-medium">Precio unitario:</span> ${item.precio_unitario}
+            </div>
+            <div>
+              <span className="font-medium">Tipo:</span> {item.tipo_producto}
+            </div>
             
-            // Verificar si hay materiales válidos (no null)
-            const tieneMateriales = 
-              (materiales.hilo !== null && materiales.hilo !== undefined) ||
-              (materiales.metale !== null && materiales.metale !== undefined) ||
-              (materiales.piedra !== null && materiales.piedra !== undefined);
-            
-            return (
-              <div key={index} className="flex items-start gap-4 border border-gray-200 rounded-lg p-4">
-                {/* Imagen del producto */}
-                <img
-                  src={item.imagen_principal || "/placeholder.jpg"}
-                  alt={item.nombre_producto}
-                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
-                  onError={(e) => {
-                    e.target.src = "/placeholder.jpg";
-                  }}
-                />
-                
-                <div className="flex-1">
-                  <h5 className="font-medium text-[#7B2710]">{item.nombre_producto}</h5>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">Cantidad:</span> {item.cantidad}
-                    </div>
-                    <div>
-                      <span className="font-medium">Precio unitario:</span> ${item.precio_unitario}
-                    </div>
-                    <div>
-                      <span className="font-medium">Tipo:</span> {item.tipo_producto}
-                    </div>
-                  </div>
+            {/* 🔹 MOSTRAR TALLA SI ES ANILLO */}
+            {item.categoria === 'Anillos' && item.talla && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                  💍 Anillo Talla: {item.talla}
+                </span>
+              </div>
+            )}
+          </div>
 
-                  {/* Materiales - SOLO para productos personalizados */}
-                  {item.tipo_producto === 'personalizado' && (
-                    <div className="mt-4 p-4 bg-[#F5F1F1] rounded-lg">
-                      <h6 className="font-semibold text-[#7B2710] mb-3">Materiales utilizados:</h6>
-                      
-                      {tieneMateriales ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Hilo */}
-                          {materiales.hilo !== null && materiales.hilo !== undefined && (
-                            <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
-                              {materiales.hilo.imagen && (
-                                <img
-                                  src={materiales.hilo.imagen}
-                                  alt={materiales.hilo.color || 'Hilo'}
-                                  className="w-12 h-12 object-cover rounded"
-                                  onError={(e) => e.target.src = "/placeholder.jpg"}
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium">Hilo</p>
-                                <p className="text-sm">{materiales.hilo.color || 'Sin especificar'}</p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Metale */}
-                          {materiales.metale !== null && materiales.metale !== undefined && (
-                            <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
-                              {materiales.metale.imagen && (
-                                <img
-                                  src={materiales.metale.imagen}
-                                  alt={materiales.metale.nombre || 'Metal'}
-                                  className="w-12 h-12 object-cover rounded"
-                                  onError={(e) => e.target.src = "/placeholder.jpg"}
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium">Metal</p>
-                                <p className="text-sm">{materiales.metale.nombre || 'Sin especificar'}</p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Piedra */}
-                          {materiales.piedra !== null && materiales.piedra !== undefined && (
-                            <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
-                              {materiales.piedra.imagen && (
-                                <img
-                                  src={materiales.piedra.imagen}
-                                  alt={materiales.piedra.nombre || 'Piedra'}
-                                  className="w-12 h-12 object-cover rounded"
-                                  onError={(e) => e.target.src = "/placeholder.jpg"}
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium">Piedra</p>
-                                <p className="text-sm">{materiales.piedra.nombre || 'Sin especificar'}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-white rounded border border-[#7B2710]">
-                          <p className="text-sm text-center text-gray-600">
-                            No se especificaron materiales para este producto personalizado
-                          </p>
-                        </div>
+          {/* Materiales - SOLO para productos personalizados */}
+          {item.tipo_producto === 'personalizado' && (
+            <div className="mt-4 p-4 bg-[#F5F1F1] rounded-lg">
+              <h6 className="font-semibold text-[#7B2710] mb-3">Materiales utilizados:</h6>
+              
+              {tieneMateriales ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Hilo */}
+                  {materiales.hilo !== null && materiales.hilo !== undefined && (
+                    <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
+                      {materiales.hilo.imagen && (
+                        <img
+                          src={materiales.hilo.imagen}
+                          alt={materiales.hilo.color || 'Hilo'}
+                          className="w-12 h-12 object-cover rounded"
+                          onError={(e) => e.target.src = "/placeholder.jpg"}
+                        />
                       )}
+                      <div>
+                        <p className="text-sm font-medium">Hilo</p>
+                        <p className="text-sm">{materiales.hilo.color || 'Sin especificar'}</p>
+                      </div>
                     </div>
                   )}
 
-                  {/* Indicador de producto personalizado */}
-                  {item.tipo_producto === 'personalizado' && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#DC9C5C] opacity-50"></div>
-                      <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full border">
-                        ✨ Personalizado
-                      </span>
-                      <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#DC9C5C] opacity-50"></div>
+                  {/* Metale */}
+                  {materiales.metale !== null && materiales.metale !== undefined && (
+                    <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
+                      {materiales.metale.imagen && (
+                        <img
+                          src={materiales.metale.imagen}
+                          alt={materiales.metale.nombre || 'Metal'}
+                          className="w-12 h-12 object-cover rounded"
+                          onError={(e) => e.target.src = "/placeholder.jpg"}
+                        />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">Metal</p>
+                        <p className="text-sm">{materiales.metale.nombre || 'Sin especificar'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Piedra */}
+                  {materiales.piedra !== null && materiales.piedra !== undefined && (
+                    <div className="flex items-center gap-3 p-3 bg-white rounded border border-[#7B2710]">
+                      {materiales.piedra.imagen && (
+                        <img
+                          src={materiales.piedra.imagen}
+                          alt={materiales.piedra.nombre || 'Piedra'}
+                          className="w-12 h-12 object-cover rounded"
+                          onError={(e) => e.target.src = "/placeholder.jpg"}
+                        />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">Piedra</p>
+                        <p className="text-sm">{materiales.piedra.nombre || 'Sin especificar'}</p>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
+              ) : (
+                <div className="p-3 bg-white rounded border border-[#7B2710]">
+                  <p className="text-sm text-center text-gray-600">
+                    No se especificaron materiales para este producto personalizado
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Indicador de producto personalizado */}
+          {item.tipo_producto === 'personalizado' && (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#DC9C5C] opacity-50"></div>
+              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full border">
+                ✨ Personalizado
+              </span>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#DC9C5C] opacity-50"></div>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  })}
+</div>
       </div>
       
       <div className="p-6 border-t flex justify-end">
@@ -480,105 +490,122 @@ export default function GestionPedidos() {
                 </select>
               </div>
 
-              
               {(nuevoEstado === 'enviado' || nuevoEstado === 'entregado' || nuevoEstado === 'cancelado') && (
                 <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mensaje para el cliente (opcional)
-                      </label>
-                      <textarea
-                        value={mensajeCorreo}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          // Permitir letras, números, espacios, puntuación básica y acentos
-                          if (valor === '' || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?¡¿:;()\-'"@#$%&*=+/\n\r]*$/.test(valor)) {
-                            setMensajeCorreo(valor);
-                          }
-              }}
-              rows={3}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560]"
-              placeholder="Este mensaje se enviará por correo al cliente..."
-              maxLength={500}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {mensajeCorreo.length}/500 caracteres
-            </p>
-          </div>
-              )}
-              
-              {nuevoEstado === 'enviado' && (
-                <>
-                  <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Empresa de envío</label>
-                      <input
-                        type="text"
-                        value={empresaEnvio}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          // Validar solo letras, números y espacios
-                          if (valor === '' || /^[a-zA-Z0-9\s]*$/.test(valor)) {
-                            // Validar máximo 20 caracteres
-                            if (valor.length <= 20) {
-                              setEmpresaEnvio(valor);
-                            }
-                          }
-                        }}
-                        className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560] ${
-                          empresaEnvio.length > 0 && !/^[a-zA-Z0-9\s]*$/.test(empresaEnvio) 
-                            ? 'border-red-500' 
-                            : 'border-gray-300'
-                        }`}
-                        maxLength={20}
-                        placeholder="Solo letras, números y espacios"
-                      />
-                      <div className="flex justify-between mt-1">
-                        <p className="text-xs text-gray-500">
-                          {empresaEnvio.length}/20 caracteres
-                        </p>
-                        {empresaEnvio.length > 0 && !/^[a-zA-Z0-9\s]*$/.test(empresaEnvio) && (
-                          <p className="text-xs text-red-500">
-                            Solo se permiten letras, números y espacios
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  
-                  <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de guía</label>
-                  <input
-                    type="text"
-                    value={numGuia}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mensaje para el cliente (opcional)
+                  </label>
+                  <textarea
+                    value={mensajeCorreo}
                     onChange={(e) => {
                       const valor = e.target.value;
-                      // Validar solo letras, números, guion medio y guion bajo
-                      if (valor === '' || /^[a-zA-Z0-9\-_]*$/.test(valor)) {
-                        // Validar máximo 30 caracteres
-                        if (valor.length <= 30) {
-                          setNumGuia(valor);
+                      const regex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?¡¿:;()\-'"@#$%&*=+/\n\r]*$/;
+
+                      if (valor === "" || regex.test(valor)) {
+                        if (valor.length <= 500) {
+                          setMensajeCorreo(valor);
+                          setErrorMensajeCorreo(""); // <-- agregado
+                        } else {
+                          setErrorMensajeCorreo("Máximo 500 caracteres"); // <-- agregado
                         }
+                      } else {
+                        setErrorMensajeCorreo("Caracter no permitido"); // <-- agregado
                       }
                     }}
+                    rows={3}
                     className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560] ${
-                      numGuia.length > 0 && !/^[a-zA-Z0-9\-_]*$/.test(numGuia) 
-                        ? 'border-red-500' 
-                        : 'border-gray-300'
+                      errorMensajeCorreo ? "border-red-500" : "border-gray-300"
                     }`}
-                    maxLength={30}
-                    placeholder="Ej: ABC123-456_DEF"
+                    placeholder="Este mensaje se enviará por correo al cliente..."
+                    maxLength={500}
                   />
-                  <div className="flex justify-between mt-1">
-                    <p className="text-xs text-gray-500">
-                      {numGuia.length}/30 caracteres
-                    </p>
-                    {numGuia.length > 0 && !/^[a-zA-Z0-9\-_]*$/.test(numGuia) && (
-                      <p className="text-xs text-red-500">
-                        Solo letras, números, - y _
-                      </p>
-                    )}
-                  </div>
+                  {errorMensajeCorreo && ( // <-- agregado
+                    <p className="text-red-500 text-sm mt-1">{errorMensajeCorreo}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {mensajeCorreo.length}/500 caracteres
+                  </p>
                 </div>
+              )}
+
+              {nuevoEstado === 'enviado' && (
+                <>
+                  {/* Empresa de envío */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Empresa de envío</label>
+                    <input
+                      type="text"
+                      value={empresaEnvio}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        const regex = /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]*$/;
+
+                        if (valor === "" || regex.test(valor)) {
+                          if (valor.length <= 20) {
+                            setEmpresaEnvio(valor);
+                            setErrorEmpresa(""); // <-- agregado
+                          } else {
+                            setErrorEmpresa("Máximo 20 caracteres"); // <-- agregado
+                          }
+                        } else {
+                          setErrorEmpresa("Solo se permiten letras, números, espacios y acentos"); // <-- agregado
+                        }
+                      }}
+                      className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560] ${
+                        errorEmpresa ? "border-red-500" : "border-gray-300"
+                      }`}
+                      maxLength={20}
+                      placeholder="Solo letras, números y espacios"
+                    />
+                    {errorEmpresa && ( // <-- agregado
+                      <p className="text-red-500 text-sm mt-1">{errorEmpresa}</p>
+                    )}
+                    <div className="flex justify-between mt-1">
+                      <p className="text-xs text-gray-500">
+                        {empresaEnvio.length}/20 caracteres
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Número de guía */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Número de guía</label>
+                    <input
+                      type="text"
+                      value={numGuia}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        const regex = /^[a-zA-Z0-9\-_]*$/; // letras, números, guion medio y bajo
+
+                        if (valor === "" || regex.test(valor)) {
+                          if (valor.length <= 30) {
+                            setNumGuia(valor);
+                            setErrorNumGuia(""); // <-- agregado
+                          } else {
+                            setErrorNumGuia("Máximo 30 caracteres"); // <-- agregado
+                          }
+                        } else {
+                          setErrorNumGuia("Solo letras, números, - y _"); // <-- agregado
+                        }
+                      }}
+                      className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#8C9560] focus:border-[#8C9560] ${
+                        errorNumGuia ? "border-red-500" : "border-gray-300"
+                      }`}
+                      maxLength={30}
+                      placeholder="Ej: ABC123-456_DEF"
+                    />
+                    {errorNumGuia && ( // <-- agregado
+                      <p className="text-red-500 text-sm mt-1">{errorNumGuia}</p>
+                    )}
+                    <div className="flex justify-between mt-1">
+                      <p className="text-xs text-gray-500">
+                        {numGuia.length}/30 caracteres
+                      </p>
+                    </div>
+                  </div>
                 </>
               )}
+
             </div>
             
             <div className="p-6 border-t flex justify-end space-x-3">

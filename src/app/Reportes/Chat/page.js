@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import NavegadorAdmin from "@/components/NavegadorAdmin";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X, Eye } from "lucide-react";
 
 function isE164(phone) {
   return /^\+[1-9]\d{7,14}$/.test(phone);
@@ -20,6 +20,10 @@ export default function PaginaBase() {
   const [terminos, setTerminos] = useState("");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  // Nuevos estados para la foto de tallas
+  const [fotoTallasAnillos, setFotoTallasAnillos] = useState("");
+  const [previewFoto, setPreviewFoto] = useState("");
+  const [uploadingFoto, setUploadingFoto] = useState(false);
 
   // Protección de ruta
   useEffect(() => {
@@ -40,11 +44,108 @@ export default function PaginaBase() {
         setDefaultMessage(data?.default_message || "");
         setHelpEmail(data?.help || "");
         setTerminos(data?.terminos || "");
+        setFotoTallasAnillos(data?.foto_tallas_anillos || "");
+        setPreviewFoto(data?.foto_tallas_anillos || "");
       } catch (err) {
         console.error("Error cargando configuración de WhatsApp:", err);
       }
     })();
   }, []);
+
+  // Validaciones para archivos de imagen
+  const validarArchivo = (file) => {
+    const extensionesPermitidas = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    if (!extensionesPermitidas.includes(extension)) {
+      setStatus("Solo se permiten archivos JPG, JPEG, PNG, WEBP o GIF");
+      return false;
+    }
+    
+    if (file.size > maxSize) {
+      setStatus("El archivo no puede ser mayor a 2MB");
+      return false;
+    }
+    
+    return true;
+  };
+
+ // En tu componente, reemplaza la función manejarSubidaFoto por:
+
+// En tu componente, modifica el manejo del preview:
+const manejarSubidaFoto = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!validarArchivo(file)) {
+    e.target.value = "";
+    return;
+  }
+
+  setUploadingFoto(true);
+  setStatus("");
+
+  try {
+    // Crear preview temporal local
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreviewFoto(e.target.result); // Preview temporal
+    };
+    reader.readAsDataURL(file);
+
+    // Subir a Cloudinary
+    const formData = new FormData();
+    formData.append('foto_tallas_anillos', file);
+
+    const res = await fetch('/api/whatsapp-config', {
+      method: 'PATCH',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Error al subir la foto');
+    }
+
+    const data = await res.json();
+    
+    // IMPORTANTE: Actualizar con la URL real de Cloudinary
+    setFotoTallasAnillos(data.url);
+    setPreviewFoto(data.url); // Reemplazar preview temporal con URL real
+    setStatus("Foto subida correctamente");
+
+  } catch (error) {
+    console.error("Error subiendo foto:", error);
+    setStatus(error.message || "Error al subir la foto");
+    setPreviewFoto("");
+    setFotoTallasAnillos("");
+  } finally {
+    setUploadingFoto(false);
+    e.target.value = "";
+  }
+};
+
+// Y la función eliminarFoto por:
+const eliminarFoto = async () => {
+  try {
+    const res = await fetch('/api/whatsapp-config', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public_id: fotoTallasAnillos }) // Necesitarías guardar el public_id también
+    });
+
+    if (!res.ok) throw new Error('Error al eliminar la foto');
+
+    setFotoTallasAnillos("");
+    setPreviewFoto("");
+    setStatus("Foto eliminada correctamente");
+  } catch (error) {
+    console.error("Error eliminando foto:", error);
+    setStatus("Error al eliminar la foto");
+  }
+};
 
   const onSave = async (e) => {
     e.preventDefault();
@@ -54,7 +155,7 @@ export default function PaginaBase() {
     const trimmedEmail = (helpEmail || "").trim();
     const trimmedTerminos = (terminos || "").trim();
 
-    // Validaciones
+    // Validaciones existentes (sin modificar)
     if (!isE164(trimmedPhone)) {
       setStatus("El teléfono debe estar en formato E.164, ej. +5215512345678");
       return;
@@ -85,6 +186,7 @@ export default function PaginaBase() {
           default_message: (defaultMessage || "").trim(),
           help: trimmedEmail || null,
           terminos: trimmedTerminos,
+          foto_tallas_anillos: fotoTallasAnillos, // Nuevo campo
           updated_by: "admin",
         }),
       });
@@ -174,28 +276,25 @@ export default function PaginaBase() {
                 <input
                   type="email"
                   className="w-full rounded-xl border border-[#7B2710] p-2"
-                  value={helpEmail} // valor editable por el usuario
+                  value={helpEmail}
                   placeholder="correo@ejemplo.com"
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\s/g, '').slice(0, 65); // sin espacios, max 65
+                    const value = e.target.value.replace(/\s/g, '').slice(0, 65);
                     setHelpEmail(value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === ' ') e.preventDefault(); // evita espacios
+                    if (e.key === ' ') e.preventDefault();
                   }}
                 />
                 
-                {/* Mensaje por defecto si el input está vacío */}
                 {!helpEmail && defaultMessage && (
                   <p className="text-xs text-gray-400 mt-1">{defaultMessage}</p>
                 )}
 
-                {/* Validaciones */}
                 <p className="text-xs text-gray-500 mt-1">
                   {helpEmail && !isValidEmail(helpEmail) && "Correo no válido"}{" "}
                 </p>
                 
-                {/* Contador de caracteres */}
                 <p className="text-xs text-gray-500 mt-1">{helpEmail.length} / 65 caracteres</p>
               </div>
 
@@ -217,14 +316,80 @@ export default function PaginaBase() {
               {terminos.trim().length === 0 && <p className="text-red-500 text-xs mt-1">El campo no puede estar vacío</p>}
             </div>
 
+            {/* NUEVO: Foto de Tallas de Anillos */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Foto de Tallas de Anillos
+              </label>
+              
+              {/* Preview de la foto */}
+              {/* En tu JSX, mejora el preview: */}
+              {previewFoto && (
+                <div className="mb-3 relative inline-block">
+                  <div className="relative group">
+                    <img 
+                      src={previewFoto} 
+                      alt="Preview de tallas de anillos"
+                      className="w-32 h-32 object-cover rounded-lg border border-[#7B2710] bg-gray-100"
+                      onError={(e) => {
+                        console.error('Error cargando imagen:', previewFoto);
+                        e.target.style.display = 'none';
+                      }}
+                      onLoad={(e) => {
+                        console.log('Imagen cargada correctamente');
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={eliminarFoto}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Debug info */}
+                  <p className="text-xs text-gray-500 mt-1 truncate max-w-32">
+                    {previewFoto.includes('data:') ? 'Preview temporal' : 'Imagen guardada'}
+                  </p>
+                </div>
+              )}
+
+              {/* Input para subir archivo */}
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 bg-white border border-[#7B2710] rounded-xl px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <Upload size={18} />
+                  {uploadingFoto ? "Subiendo..." : "Seleccionar Foto"}
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.gif"
+                    onChange={manejarSubidaFoto}
+                    disabled={uploadingFoto}
+                    className="hidden"
+                  />
+                </label>
+                
+                {fotoTallasAnillos && (
+                  <span className="text-sm text-green-600">✓ Foto cargada</span>
+                )}
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-1">
+                Formatos permitidos: JPG, JPEG, PNG, WEBP, GIF | Máx. 2MB
+              </p>
+            </div>
+
             {/* Botón guardar */}
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl border border-[#7B2710] px-4 py-2 hover:bg-[#8C9560] disabled:opacity-50"
-            >
-              {saving ? "Guardando..." : "Guardar"}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={saving || uploadingFoto}
+                className="rounded-xl border border-[#7B2710] px-4 py-2 hover:bg-[#8C9560] disabled:opacity-50"
+              >
+                {saving ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
 
             {status && <div className="text-sm mt-2">{status}</div>}
           </form>

@@ -70,7 +70,10 @@ function CheckoutInner({
             stock: item.stock,
             materiales: item.materiales,
             tiempoEntrega: item.tiempoEntrega,
-            PrecioManoObra: item.PrecioManoObra
+            PrecioManoObra: item.PrecioManoObra,
+            // ✅ AGREGAR ESTAS DOS PROPIEDADES:
+            talla: item.talla || null,
+            id_stock: item.id_stock || null
           })),
           envioSeleccionado: {
             id_envio: envioSeleccionado.id_envio,
@@ -127,7 +130,9 @@ function CheckoutInner({
             stock: item.stock,
             materiales: item.materiales,
             tiempoEntrega: item.tiempoEntrega,
-            PrecioManoObra: item.PrecioManoObra
+            PrecioManoObra: item.PrecioManoObra,
+            talla: item.talla || null,
+            id_stock: item.id_stock || null
           })),
           envioSeleccionado: {
             id_envio: envioSeleccionado.id_envio,
