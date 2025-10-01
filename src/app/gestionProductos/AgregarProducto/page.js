@@ -79,8 +79,8 @@ export default function AgregarProductoPage() {
       case "name":
         if (value.length < 15) {
           return { isValid: false, message: "Mínimo 15 caracteres" };
-        } else if (value.length > 50) {
-          return { isValid: false, message: "Máximo 50 caracteres" };
+        } else if (value.length > 70) {
+          return { isValid: false, message: "Máximo 70 caracteres" };
         } else if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(value)) {
           return { isValid: false, message: "Debe contener letras" };
         } else if (!/^[\wñÑáéíóúÁÉÍÓÚ()% ]+$/.test(value)) {
@@ -144,7 +144,7 @@ export default function AgregarProductoPage() {
       newValue = value.replace(/[^\w()]/g, "").slice(0, 20);
       setProductData({ ...productData, id: newValue });
     } else if (name === "name") {
-      newValue = value.replace(/[^\wñÑáéíóúÁÉÍÓÚ()% ]/g, "").slice(0, 50);
+      newValue = value.replace(/[^\wñÑáéíóúÁÉÍÓÚ()% ]/g, "").slice(0, 70);
       setProductData({ ...productData, name: newValue });
     } else if (name === "price") {
       newValue = value.replace(/[^\d]/g, "").slice(0, 5);
@@ -342,12 +342,12 @@ export default function AgregarProductoPage() {
                       onChange={handleInputChange} 
                       className={getInputClass("name")} 
                       required 
-                      maxLength={50} 
+                      maxLength={70} 
                     />
                     <p className={`text-sm mt-1 ${
                       validations.name?.isValid ? "text-gray-600" : "text-red-600"
                     }`}>
-                      {validations.name?.message || "Mínimo 15, máximo 50 caracteres (debe contener letras)"}
+                      {validations.name?.message || "Mínimo 15, máximo 70 caracteres (debe contener letras)"}
                     </p>
                   </div>
                 </div>

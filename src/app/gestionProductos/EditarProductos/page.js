@@ -202,7 +202,7 @@ export default function EditarProducto() {
     if (name === "name") {
       const cleaned = value
         .replace(/[^a-zA-Z0-9ñÑáéíóúÁÉÍÓÚ_%\s]/g, "")
-        .slice(0, 50);
+        .slice(0, 70);
       setProductData({ ...productData, name: cleaned });
       return;
     }
@@ -470,11 +470,12 @@ export default function EditarProducto() {
                         name="id"
                         value={productData.id}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-[#8C9560] rounded-md"
+                        className="w-full p-2 border border-[#8C9560] rounded-md bg-gray-100 cursor-not-allowed"
                         required
                         maxLength={20}
+                        readOnly
                       />
-                      <p className="text-sm text-gray-600 mt-1">Solo letras, números y _ (máx. 20)</p>
+                      <p className="text-sm text-gray-600 mt-1">El ID no se puede editar</p>
                     </div>
 
                     <div>
@@ -486,9 +487,9 @@ export default function EditarProducto() {
                         onChange={handleInputChange}
                         className="w-full p-2 border border-[#8C9560] rounded-md"
                         required
-                        maxLength={50}
+                        maxLength={70}
                       />
-                      <p className="text-sm text-gray-600 mt-1">Máximo 50 caracteres</p>
+                      <p className="text-sm text-gray-600 mt-1">Máximo 70 caracteres</p>
                     </div>
 
                     <div>
@@ -547,13 +548,13 @@ export default function EditarProducto() {
                               <input
                                 type="number"
                                 min="0"
-                                max="50"
+                                max="70"
                                 value={stockPorTalla[t.id_talla] ?? ""}
                                 onChange={(e) => {
                                   let value = e.target.value;
                                   value = value.replace(/\D/g, "");
-                                  if (value !== "" && parseInt(value) > 50) {
-                                    value = "50";
+                                  if (value !== "" && parseInt(value) > 70) {
+                                    value = "70";
                                   }
                                   setStockPorTalla({
                                     ...stockPorTalla,

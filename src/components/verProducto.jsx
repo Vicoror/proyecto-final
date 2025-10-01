@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiX, FiZoomIn, FiArrowRight } from "react-icons/fi";
+import { FiX, FiZoomIn, FiArrowRight, FiArrowLeft} from "react-icons/fi";
 import Image from "next/image";
 import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
 import IconoCarrito from "@/components/IconoCarrito";
@@ -196,6 +196,52 @@ export default function VerProducto({ idProducto, onClose }) {
           )}
           </div>
         )}
+
+        {imagenSeleccionadaIndex !== null && (
+  <div className="fixed inset-0 bg-[#762114] bg-opacity-70 z-50 flex justify-center items-center px-4">
+    
+    {/* Botón para cerrar la vista ampliada */}
+    <button
+      onClick={() => setImagenSeleccionadaIndex(null)}
+      className="absolute top-5 left-5 text-white text-4xl hover:text-[#DC9C5C]"
+    >
+      <FiArrowLeft />
+    </button>
+
+    {/* Flecha anterior */}
+    {imagenSeleccionadaIndex > 0 && (
+      <button
+        onClick={() => setImagenSeleccionadaIndex((prev) => prev - 1)}
+        className="absolute left-5 md:left-80 text-white text-4xl hover:text-[#DC9C5C] top-30"
+        aria-label="Imagen anterior"
+      >
+        <FiArrowLeft />
+      </button>
+    )}
+
+    {/* Imagen ampliada */}
+    <Image
+      src={imagenes[imagenSeleccionadaIndex]}
+      alt="Imagen ampliada"
+      width={600}
+      height={600}
+      className="max-w-full max-h-[90vh] rounded-lg object-contain shadow-xl"
+    />
+
+    {/* Flecha siguiente */}
+    {imagenSeleccionadaIndex < imagenes.length - 1 && (
+      <button
+        onClick={() => setImagenSeleccionadaIndex((prev) => prev + 1)}
+        className="absolute right-5 md:right-80 text-white text-4xl hover:text-[#DC9C5C] top-30"
+        aria-label="Siguiente imagen"
+      >
+        <FiArrowRight />
+      </button>
+    )}
+    
+  </div>
+)}
+
 
         {/* Botón de agregar al carrito - CONDICIÓN SIMPLIFICADA */}
         {producto?.categoria === "Anillos" && stockTallas.length > 0 && (
