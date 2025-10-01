@@ -15,7 +15,6 @@ export default function EditarProducto() {
     image2: null,
     image3: null,
     stock: 0,
-    active: true
   });
   const [selectedInterface, setSelectedInterface] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -237,71 +236,99 @@ export default function EditarProducto() {
     setProductData({ ...productData, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateId(productData.id)) {
-      setError("ID inválido: Solo letras, números y _ (máx. 20 caracteres)");
-      return;
+  if (!validateId(productData.id)) {
+    setError("ID inválido: Solo letras, números y _ (máx. 20 caracteres)");
+    return;
+  }
+  if (!validateName(productData.name)) {
+    setError("Nombre inválido (máx. 50 caracteres)");
+    return;
+  }
+
+  const parsedPrice = Number(productData.price);
+  if (
+    isNaN(parsedPrice) ||
+    !validatePrice(parsedPrice) ||
+    productData.price.length > 6
+  ) {
+    setError("Precio inválido: debe ser un número de máximo 4 cifras entre $20 y $5000");
+    return;
+  }
+  if (selectedInterface === "principal" && !validateDescription(productData.description)) {
+    setError("Descripción inválida: Máx. 300 caracteres y signos básicos");
+    return;
+  }
+  if (productData.name.length < 15) {
+    setError("El nombre debe tener al menos 15 caracteres.");
+    return;
+  }
+
+  if (selectedInterface === "principal" && productData.description.length < 30) {
+    setError("La descripción debe tener al menos 30 caracteres.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('id', productData.id);
+  formData.append('name', productData.name);
+  formData.append('price', parsedPrice.toString());
+  formData.append('category', productData.category);
+  formData.append('active', productData.active.toString());
+  formData.append('stock', productData.stock?.toString() ?? "0");
+
+   if (productData.category === "Anillos") {
+    // Convertir stockPorTalla al formato que espera tu API
+    const tallasArray = Object.entries(stockPorTalla).map(([id_talla, stock]) => ({
+      id_talla: parseInt(id_talla),
+      stock: stock || 0
+    }));
+    formData.append('stockPorTalla', JSON.stringify(tallasArray));
+  }
+
+  if (productData.image) formData.append('image', productData.image);
+  if (productData.image2) formData.append('image2', productData.image2);
+  if (productData.image3) formData.append('image3', productData.image3);
+  if (selectedInterface === "principal") formData.append('description', productData.description);
+ 
+  try {
+    const response = await fetch(`/api/productos?type=${selectedInterface}`, {
+      method: 'PUT',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Error al actualizar");
     }
-    if (!validateName(productData.name)) {
-      setError("Nombre inválido (máx. 50 caracteres)");
-      return;
-    }
-
-    const parsedPrice = Number(productData.price);
-    if (
-      isNaN(parsedPrice) ||
-      !validatePrice(parsedPrice) ||
-      productData.price.length > 6
-    ) {
-      setError("Precio inválido: debe ser un número de máximo 4 cifras entre $20 y $5000");
-      return;
-    }
-    if (selectedInterface === "principal" && !validateDescription(productData.description)) {
-      setError("Descripción inválida: Máx. 300 caracteres y signos básicos");
-      return;
-    }
-    if (productData.name.length < 15) {
-      setError("El nombre debe tener al menos 15 caracteres.");
-      return;
-    }
-
-    if (selectedInterface === "principal" && productData.description.length < 30) {
-      setError("La descripción debe tener al menos 30 caracteres.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('id', productData.id);
-    formData.append('name', productData.name);
-    formData.append('price', parsedPrice.toString());
-    formData.append('category', productData.category);
-    formData.append('active', productData.active.toString());
-    formData.append('stock', productData.stock?.toString() ?? "0");
-
-    if (productData.image) formData.append('image', productData.image);
-    if (productData.image2) formData.append('image2', productData.image2);
-    if (productData.image3) formData.append('image3', productData.image3);
-    if (selectedInterface === "principal") formData.append('description', productData.description);
-
-    try {
-      const response = await fetch(`/api/productos?type=${selectedInterface}`, {
-        method: 'PUT',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al actualizar");
-      }
-
-      alert("Producto actualizado exitosamente");
-      router.push("/Admin");
-    } catch (error) {
-      setError(error.message);
-    }
-  };
+    
+    // CON ESTO:
+    setSuccess("✅ Cambios guardados exitosamente");
+    
+    // Limpiar todos los campos para editar un nuevo producto
+    setProductData({
+      id: "",
+      name: "",
+      price: "",
+      description: "",
+      category: "",
+      image: null,
+      image2: null,
+      image3: null,
+      stock: 0,
+    });
+    
+    // Limpiar también los resultados de búsqueda y términos
+    setSearchResults([]);
+    setSearchTerm("");
+    setError("");
+    
+  } catch (error) {
+    setError(error.message);
+  }
+};
 
   function selectProduct(product) {
     setProductData({
@@ -348,8 +375,7 @@ export default function EditarProducto() {
                     price: "",
                     description: "",
                     category: "",
-                    image: null,
-                    active: true
+                    image: null
                   });
                 }}
                 className={`py-2 px-4 rounded-md ${selectedInterface === "principal" ? 'bg-[#DC9C5C] text-white' : 'bg-[#8C9560] text-white'}`}
@@ -611,7 +637,7 @@ export default function EditarProducto() {
                     <input
                       type="checkbox"
                       id="active"
-                      checked={productData.active}
+                      checked={productData.active ?? false} 
                       onChange={(e) => setProductData({...productData, active: e.target.checked})}
                       className="h-4 w-4 text-[#8C9560] rounded border-gray-300"
                     />

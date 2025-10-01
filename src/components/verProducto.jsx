@@ -96,22 +96,6 @@ export default function VerProducto({ idProducto, onClose }) {
       : String(producto.id_productos)
   };
 
-
-console.log("🔍 DEBUG productoCarrito:", {
-  nombre: producto.nombre,
-  categoria: producto.categoria,
-  id: producto.id_productos,
-  selectedTalla: selectedTalla,
-  id_stock: stockSeleccionado?.id_stock,
-  stockSeleccionado: stockSeleccionado,
-  productoCarrito: {
-    talla: productoCarrito.talla,
-    id_stock: productoCarrito.id_stock,
-    uniqueId: productoCarrito.uniqueId,
-    stock: productoCarrito.stock
-  }
-});
-
   const imagenes = [prod.image, prod.image2, prod.image3].filter(Boolean);
 
   return (
@@ -120,7 +104,7 @@ console.log("🔍 DEBUG productoCarrito:", {
         <IconoCarrito />
       </div>
 
-      <div className="relative w-full max-w-lg rounded-xl shadow-2xl p-6 font-sans overflow-hidden">
+      <div className="relative w-full max-w-lg rounded-xl shadow-2xl p-6 font-sans overflow-hidden mt-22">
         <div
           className="absolute inset-0 z-0"
           style={{

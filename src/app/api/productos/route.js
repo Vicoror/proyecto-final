@@ -117,7 +117,7 @@ export async function POST(request) {
     const description = formData.get('description');
     const category = formData.get('category');
     const stock = parseInt(formData.get('stock'), 10);
-    const active = formData.get('active') === 'true';
+    const active = formData.get('active') !== 'false';
     const stockPorTalla = formData.get('stockPorTalla')
       ? JSON.parse(formData.get('stockPorTalla'))
       : null;
@@ -154,8 +154,6 @@ export async function POST(request) {
       [id, name, price, description, category, imageUrl, image2Url, image3Url, stock, active]
     );
 
-    // 🔹 Guardar stock por talla si es anillo
-    // 🔹 Guardar stock por talla si es anillo
        // Guardar stock por talla si es anillo
       if (category === "Anillos" && stockPorTalla) {
         for (const [id_talla, stockValue] of Object.entries(stockPorTalla)) {
@@ -194,7 +192,11 @@ export async function PUT(request) {
     const description = formData.get('description');
     const category = formData.get('category');
     const stock = parseInt(formData.get('stock'), 10);
-    const active = formData.get('active') === 'true';
+
+    // 🔹 Aceptar tanto "active" como "activo"
+    const activeField = formData.get('active') ?? formData.get('activo');
+    const active = activeField === 'true' || activeField === '1';
+
     const stockPorTalla = formData.get('stockPorTalla')
       ? JSON.parse(formData.get('stockPorTalla'))
       : null;
@@ -206,7 +208,10 @@ export async function PUT(request) {
     const table = type === 'personalizados' ? 'productos_personalizados' : 'productos';
     const idField = type === 'personalizados' ? 'id_productosPerso' : 'id_productos';
 
-    const [existing] = await pool.query(`SELECT ${idField} FROM ${table} WHERE ${idField} = ?`, [id]);
+    const [existing] = await pool.query(
+      `SELECT ${idField} FROM ${table} WHERE ${idField} = ?`,
+      [id]
+    );
     if (existing.length === 0) {
       return new Response(JSON.stringify({ message: 'Producto no encontrado' }), {
         status: 404,
@@ -245,25 +250,33 @@ export async function PUT(request) {
 
     // 🔹 Actualizar stock por talla
     if (category === "Anillos" && stockPorTalla) {
+      await pool.query('DELETE FROM stock_anillos WHERE id_producto = ?', [id]);
       for (const talla of stockPorTalla) {
-        await pool.query(
-          `INSERT INTO stock_anillos (id_producto, id_talla, stock) 
-           VALUES (?, ?, ?)
-           ON DUPLICATE KEY UPDATE stock = VALUES(stock)`,
-          [id, talla.id_talla, talla.stock]
-        );
+        if (talla.stock > 0) {
+          await pool.query(
+            'INSERT INTO stock_anillos (id_producto, id_talla, stock) VALUES (?, ?, ?)',
+            [id, talla.id_talla, talla.stock]
+          );
+        }
       }
     }
 
-    return new Response(JSON.stringify({ success: true, message: 'Producto actualizado correctamente' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ success: true, message: 'Producto actualizado correctamente' }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
     console.error('Error en API PUT:', error);
-    return new Response(JSON.stringify({ message: 'Error al actualizar el producto', error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ message: 'Error al actualizar el producto', error: error.message }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }
+
