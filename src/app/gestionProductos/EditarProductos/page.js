@@ -113,7 +113,7 @@ export default function EditarProducto() {
   const validateDescription = (desc) => {
     const charCount = desc.length;
     return (
-      charCount <= 300 &&
+      charCount <= 600 &&
       /^[a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑüÜ.,:;!%?'"()\-]*$/.test(desc)
     );
   };
@@ -166,11 +166,11 @@ export default function EditarProducto() {
       const file = files[0];
       if (!file) return;
 
-      const validExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+      const validExtensions = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
       const fileExtension = file.name.split(".").pop().toLowerCase();
 
       if (!file.type.startsWith("image/") || !validExtensions.includes(fileExtension)) {
-        setError("Solo se permiten archivos de imagen válidos (.jpg, .jpeg, .png, .gif, .webp)");
+        setError("Solo se permiten archivos de imagen válidos (.jpg, .jpeg, .png, .gif, .webp, avif)");
         return;
       }
 
@@ -227,7 +227,7 @@ export default function EditarProducto() {
     }
 
     if (name === "description") {
-      if (value.length <= 300 && validateDescription(value)) {
+      if (value.length <= 600 && validateDescription(value)) {
         setProductData({ ...productData, description: value });
       }
       return;
@@ -244,7 +244,7 @@ export default function EditarProducto() {
     return;
   }
   if (!validateName(productData.name)) {
-    setError("Nombre inválido (máx. 50 caracteres)");
+    setError("Nombre inválido (máx. 70 carácteres)");
     return;
   }
 
@@ -258,7 +258,7 @@ export default function EditarProducto() {
     return;
   }
   if (selectedInterface === "principal" && !validateDescription(productData.description)) {
-    setError("Descripción inválida: Máx. 300 caracteres y signos básicos");
+    setError("Descripción inválida: Máx. 600 caracteres y signos básicos");
     return;
   }
   if (productData.name.length < 15) {
@@ -579,9 +579,9 @@ export default function EditarProducto() {
                           className="w-full p-2 border border-[#8C9560] rounded-md"
                           rows={4}
                           required
-                          maxLength={300}
+                          maxLength={600}
                         />
-                        <p className="text-sm text-gray-600 mt-1">Máximo 300 palabras (300 caracteres)</p>
+                        <p className="text-sm text-gray-600 mt-1">Máximo 600 palabras (600 caracteres)</p>
                       </div>
                     )}
 

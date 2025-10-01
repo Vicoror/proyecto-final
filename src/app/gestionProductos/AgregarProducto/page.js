@@ -102,8 +102,8 @@ export default function AgregarProductoPage() {
       case "description":
         if (value.length < 30) {
           return { isValid: false, message: "Mínimo 30 caracteres" };
-        } else if (value.length > 300) {
-          return { isValid: false, message: "Máximo 300 caracteres" };
+        } else if (value.length > 600) {
+          return { isValid: false, message: "Máximo 600 caracteres" };
         } else if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(value)) {
           return { isValid: false, message: "Debe contener letras" };
         } else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,;:¿?!_%\s]+$/.test(value)) {
@@ -152,7 +152,7 @@ export default function AgregarProductoPage() {
     } else if (name === "description") {
       newValue = value
         .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,;:¿?!_%\s]/g, "")
-        .slice(0, 300);
+        .slice(0, 600);
       setProductData({ ...productData, description: newValue });
     } else if (name === "image" || name === "image2" || name === "image3") {
       const file = files[0];
@@ -264,7 +264,6 @@ export default function AgregarProductoPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Error al guardar el producto");
       alert("Producto guardado exitosamente");
-      router.push("/Admin");
     } catch (error) {
       console.error("Error detallado:", error);
       alert(`Error al guardar el producto: ${error.message}`);
@@ -444,13 +443,13 @@ export default function AgregarProductoPage() {
                     onChange={handleInputChange} 
                     className={getInputClass("description")} 
                     rows="3" 
-                    maxLength={300} 
+                    maxLength={600} 
                     required
                   ></textarea>
                   <p className={`text-sm mt-1 ${
                       validations.description?.isValid ? "text-gray-600" : "text-red-600"
                     }`}>
-                    {validations.description?.message || "Mínimo 30, máximo 300 caracteres (debe contener letras)"}
+                    {validations.description?.message || "Mínimo 30, máximo 600 caracteres (debe contener letras)"}
                   </p>
                 </div>
 

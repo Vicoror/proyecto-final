@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function EditarMateriales() {
   const [materiales, setMateriales] = useState({ metales: [], piedras: [], hilos: [] });
@@ -16,10 +17,19 @@ export default function EditarMateriales() {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorImagen, setErrorImagen] = useState("");
+  const [openTablas, setOpenTablas] = useState({
+    metal: true,
+    piedra: false,
+    hilo: false,
+  });
 
   useEffect(() => {
     obtenerMateriales();
   }, []);
+
+  const toggleTabla = (tipo) => {
+    setOpenTablas((prev) => ({ ...prev, [tipo]: !prev[tipo] }));
+  };
 
   const obtenerMateriales = async () => {
     try {
@@ -34,27 +44,18 @@ export default function EditarMateriales() {
     const { name, value } = e.target;
     
     if (name === "nombre") {
-  // Regex:
-  //  - Solo letras, números, acentos y espacios
-  //  - No más de 3 números seguidos
-  //  - No más de 2 letras iguales seguidas
-  const regex = /^(?!.*\d{4})(?!.*([a-zA-ZÀ-ÿ])\1{2,})[a-zA-ZÀ-ÿ0-9\s]*$/;
+      const regex = /^(?!.*\d{4})(?!.*([a-zA-ZÀ-ÿ])\1{2,})[a-zA-ZÀ-ÿ0-9\s.]*$/;
+      const trimmedValue = value.trimStart();
 
-  // Quitar espacios al inicio (evita llenar solo con espacios)
-  const trimmedValue = value.trimStart();
-
-  if (trimmedValue === "" || regex.test(trimmedValue)) {
-    if (trimmedValue.length <= 35) {
-      // Evitar que sea solo números
-      if (!/^\d+$/.test(trimmedValue)) {
-        setFormulario({ ...formulario, [name]: trimmedValue });
+      if (trimmedValue === "" || regex.test(trimmedValue)) {
+        if (trimmedValue.length <= 35) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            setFormulario({ ...formulario, [name]: trimmedValue });
+          }
+        }
       }
     }
-  }
-}
-
     else if (name === "precio") {
-      // Validar que solo sean números entre 0 y 5000
       const regex = /^[0-9]*\.?[0-9]*$/;
       if (value === "" || regex.test(value)) {
         if (value === "" || (parseFloat(value) >= 0 && parseFloat(value) <= 5000)) {
@@ -66,39 +67,35 @@ export default function EditarMateriales() {
     }
   };
 
-const manejarArchivo = (e) => {
-  const file = e.target.files[0];
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  const manejarArchivo = (e) => {
+    const file = e.target.files[0];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
-  if (!file) {
-    setErrorImagen("Debes seleccionar una imagen.");
-    setFormulario({ ...formulario, imagen: null });
-    return;
-  }
+    if (!file) {
+      setErrorImagen("Debes seleccionar una imagen.");
+      setFormulario({ ...formulario, imagen: null });
+      return;
+    }
 
-  if (!validTypes.includes(file.type)) {
-    setErrorImagen("Formato inválido. Solo se permiten imágenes (JPEG, JPG, PNG, WEBP, GIF).");
-    setFormulario({ ...formulario, imagen: null });
-    e.target.value = ""; // limpiar input
-    return;
-  }
+    if (!validTypes.includes(file.type)) {
+      setErrorImagen("Formato inválido. Solo se permiten imágenes (JPEG, JPG, PNG, WEBP, GIF).");
+      setFormulario({ ...formulario, imagen: null });
+      e.target.value = "";
+      return;
+    }
 
-  setFormulario({ ...formulario, imagen: file });
-  setErrorImagen("");
-};
+    setFormulario({ ...formulario, imagen: file });
+    setErrorImagen("");
+  };
 
-const manejarSubmit = (e) => {
-  e.preventDefault();
-  if (!formulario.imagen) {
-    setErrorImagen("La imagen es obligatoria.");
-    return;
-  }
-
-  // Aquí ya podrías enviar tu formulario
-  console.log("Formulario listo con imagen:", formulario.imagen);
-};
-
-
+  const manejarSubmit = (e) => {
+    e.preventDefault();
+    if (!formulario.imagen) {
+      setErrorImagen("La imagen es obligatoria.");
+      return;
+    }
+    console.log("Formulario listo con imagen:", formulario.imagen);
+  };
 
   const manejarEditar = (tipo, item) => {
     setFormulario({
@@ -119,42 +116,39 @@ const manejarSubmit = (e) => {
     setErrorImagen("");
   };
 
-const manejarGuardar = async () => {
-  const nombreValido = /^[a-zA-ZÀ-ÿ0-9\s]*$/;
-  const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif)$/.test(file?.type);
+  const manejarGuardar = async () => {
+    const nombreValido = /^[a-zA-ZÀ-ÿ0-9\s.]*$/;
+    const esImagen = (file) => /^image\/(jpeg|jpg|png|webp|gif)$/.test(file?.type);
 
-  if (!formulario.nombre || formulario.nombre.length > 35 || !nombreValido.test(formulario.nombre)) {
-    return alert("Nombre inválido. Solo letras, números y acentos están permitidos (máximo 35 caracteres).");
-  }
+    if (!formulario.nombre || formulario.nombre.length > 35 || !nombreValido.test(formulario.nombre)) {
+      return alert("Nombre inválido. Solo letras, números y acentos están permitidos (máximo 35 caracteres).");
+    }
 
-  if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 5000) {
-    return alert("El precio debe ser un número válido entre 0 y 5000.");
-  }
+    if (!/^[0-9]+(\.[0-9]+)?$/.test(formulario.precio) || parseFloat(formulario.precio) > 5000) {
+      return alert("El precio debe ser un número válido entre 0 y 5000.");
+    }
 
-  // 🔴 Validación de imagen obligatoria SOLO si es nuevo
-  if (!modoEdicion && !formulario.imagen) {
-    setErrorImagen("La imagen es obligatoria.");
-    return;
-  }
+    if (!modoEdicion && !formulario.imagen) {
+      setErrorImagen("La imagen es obligatoria.");
+      return;
+    }
 
-  if (formulario.imagen) {
-    const img = new Image();
-    img.src = URL.createObjectURL(formulario.imagen);
-    img.onload = async () => {
-      if (img.width > 1200 || img.height > 1200) {
-        return alert("La imagen debe tener un tamaño máximo de 1200x1200.");
-      }
-      if (!esImagen(formulario.imagen)) {
-        return alert("El archivo debe ser una imagen (jpg, png, webp, etc.).");
-      }
+    if (formulario.imagen) {
+      const img = new Image();
+      img.src = URL.createObjectURL(formulario.imagen);
+      img.onload = async () => {
+        if (img.width > 1200 || img.height > 1200) {
+          return alert("La imagen debe tener un tamaño máximo de 1200x1200.");
+        }
+        if (!esImagen(formulario.imagen)) {
+          return alert("El archivo debe ser una imagen (jpg, png, webp, etc.).");
+        }
+        await enviarFormulario();
+      };
+    } else {
       await enviarFormulario();
-    };
-  } else {
-    // Aquí solo entra si está en edición y no cambió la imagen
-    await enviarFormulario();
-  }
-};
-
+    }
+  };
 
   const enviarFormulario = async () => {
     const formData = new FormData();
@@ -198,7 +192,6 @@ const manejarGuardar = async () => {
     }[tipo];
     return (
       <div className="overflow-auto mb-8">
-        <h3 className="text-xl font-bold mb-2 text-[#7B2710]">{tipo.charAt(0).toUpperCase() + tipo.slice(1)} </h3>
         <table className="w-full border bg-white text-center">
           <thead className="bg-[#DC9C5C] text-white">
             <tr>
@@ -257,10 +250,43 @@ const manejarGuardar = async () => {
       <section className="w-full bg-[#F5F1F1] rounded-xl shadow-2xl border-4 border-[#762114] p-6 md:p-8">
         <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Editar Materiales</h2>
 
-        {renderTabla("metal")}
-        {renderTabla("piedra")}
-        {renderTabla("hilo")}
+        {/* Tabla de Metal */}
+        <div className="mb-4 border rounded bg-white shadow">
+          <button
+            onClick={() => toggleTabla("metal")}
+            className="w-full flex justify-between items-center p-3 bg-[#762114] text-white font-semibold rounded-t"
+          >
+            <span>Metales</span>
+            {openTablas.metal ? <ChevronUp /> : <ChevronDown />}
+          </button>
+          {openTablas.metal && <div className="p-4">{renderTabla("metal")}</div>}
+        </div>
 
+        {/* Tabla de Piedra */}
+        <div className="mb-4 border rounded bg-white shadow">
+          <button
+            onClick={() => toggleTabla("piedra")}
+            className="w-full flex justify-between items-center p-3 bg-[#762114] text-white font-semibold rounded-t"
+          >
+            <span>Piedras</span>
+            {openTablas.piedra ? <ChevronUp /> : <ChevronDown />}
+          </button>
+          {openTablas.piedra && <div className="p-4">{renderTabla("piedra")}</div>}
+        </div>
+
+        {/* Tabla de Hilo */}
+        <div className="mb-4 border rounded bg-white shadow">
+          <button
+            onClick={() => toggleTabla("hilo")}
+            className="w-full flex justify-between items-center p-3 bg-[#762114] text-white font-semibold rounded-t"
+          >
+            <span>Hilos</span>
+            {openTablas.hilo ? <ChevronUp /> : <ChevronDown />}
+          </button>
+          {openTablas.hilo && <div className="p-4">{renderTabla("hilo")}</div>}
+        </div>
+
+        {/* Formulario */}
         <div className="bg-white p-4 rounded shadow-md border mt-6">
           <h3 className="text-lg font-semibold text-[#7B2710] mb-2">
             {modoEdicion ? "Editar Material" : "Agregar Material"}

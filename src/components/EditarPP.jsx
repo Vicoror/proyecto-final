@@ -57,6 +57,8 @@ export default function EditarPP() {
         'image/png',
         'image/gif',
         'image/webp',
+        'image/avif',
+        'image/jpg',
       ];
 
       // Validar tipo de archivo
@@ -78,9 +80,7 @@ export default function EditarPP() {
 
       // Si pasa todas las validaciones
       setFormEdicion(prev => ({ ...prev, nuevaImagen: file }));
-    }
-    
-    
+    }   
 }
 
   const guardarEdicion = async () => {

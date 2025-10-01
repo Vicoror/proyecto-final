@@ -151,10 +151,32 @@ export async function PUT(request) {
       
       // Procesar imagen si existe
       const imagen = formData.get('imagen');
-      if (imagen) {
-        // Aquí tu lógica para subir la imagen a Cloudinary o donde corresponda
-        // datos.ImagenPP = urlDeLaImagenSubida;
+      if (imagen && imagen.size > 0) {
+        // Convertir la imagen a buffer
+        const bytes = await imagen.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Subir a Cloudinary usando promesas
+        const resultado = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { 
+              folder: "productosPersonalizados",
+              resource_type: "auto"
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error("Error al subir la imagen a Cloudinary"));
+              } else {
+                resolve(result);
+              }
+            }
+          ).end(buffer);
+        });
+
+        // Asignar la nueva URL de la imagen
+        datos.ImagenPP = resultado.secure_url;
       }
+
     } else {
       datos = await request.json();
     }
@@ -170,7 +192,7 @@ export async function PUT(request) {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // 1. Actualizar producto base
+    // 1. Actualizar producto base - Asegúrate que ImagenPP se actualice
     await connection.query(
       `UPDATE productospersonalizados 
        SET nombreModelo = ?, categoria = ?, tiempoEntrega = ?, 
@@ -182,7 +204,7 @@ export async function PUT(request) {
         datos.tiempoEntrega || 1,
         datos.PrecioManoObra || 0,
         datos.Activar ? 1 : 0,
-        datos.ImagenPP || null,
+        datos.ImagenPP || null, // ✅ Aquí se actualiza la imagen
         datos.id_ProPer
       ]
     );
