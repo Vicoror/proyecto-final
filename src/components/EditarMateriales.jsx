@@ -320,13 +320,33 @@ export default function EditarMateriales() {
                 name="precio"
                 type="text"
                 value={formulario.precio}
-                onChange={manejarCambio}
+                onChange={(e) => {
+                  let valor = e.target.value;
+                  valor = valor.replace(/[^0-9.]/g, '');
+                  const partes = valor.split('.');
+                  if (partes.length > 2) valor = partes[0] + '.' + partes[1];
+
+                  if (partes[1]?.length > 2) {
+                    valor = partes[0] + '.' + partes[1].slice(0, 2);
+                  }
+                  const num = parseFloat(valor || 0);
+
+                  if (num <= 5000) {
+                    manejarCambio({ target: { name: 'precio', value: valor } });
+                  } else {
+                    manejarCambio({ target: { name: 'precio', value: '5000' } });
+                  }
+                }}
                 className="p-2 border rounded w-full h-10"
                 placeholder="Precio x 10 gramos o 10 metros (hilo)"
               />
               <p className="text-xs text-gray-500 mt-2">Solo números entre 0 y 5000</p>
+              {parseFloat(formulario.precio) > 5000 && (
+                <p className="text-xs text-red-600 mt-1">
+                  El precio no puede ser mayor a 5000
+                </p>
+              )}
             </div>
-
             <select
               name="activar"
               value={formulario.activar}

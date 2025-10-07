@@ -95,10 +95,10 @@ export default function PaginaBase() {
       
       // Validación en tiempo real para nombreModelo
       if (name === "nombreModelo") {
-        const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,35}$/;
+        const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,100}$/;
         setErrores(prev => ({
           ...prev,
-          nombreModelo: regex.test(valorSanitizado) ? "" : "Solo se permiten letras y espacios (máx 35 caracteres)"
+          nombreModelo: regex.test(valorSanitizado) ? "" : "Solo se permiten letras y espacios (máx 100 caracteres)"
         }));
       }
 
@@ -167,8 +167,8 @@ export default function PaginaBase() {
     // Validar nombre
     if (!formulario.nombreModelo.trim()) {
       nuevosErrores.nombreModelo = "El nombre es requerido";
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,35}$/.test(formulario.nombreModelo)) {
-      nuevosErrores.nombreModelo = "Solo letras y espacios (máx 35 caracteres)";
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,100}$/.test(formulario.nombreModelo)) {
+      nuevosErrores.nombreModelo = "Solo letras y espacios (máx 100 caracteres)";
     }
 
     // Validar categoría
@@ -301,7 +301,7 @@ export default function PaginaBase() {
                 onChange={manejarCambio}
                 className="w-full p-2 rounded border"
                 placeholder="Ej. Pulsera Maya"
-                maxLength={35}
+                maxLength={100}
               /> {errores.nombreModelo && <p className="text-red-500 text-sm mt-1">{errores.nombreModelo}</p>}
             </div>
 
@@ -321,144 +321,182 @@ export default function PaginaBase() {
             </div>
 
             {/* 🔩 Metales */}
-            <div>
-              <label className="block font-semibold text-[#7B2710] mb-2">Metales</label>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {metales.map((m) => {
-                  const elemento = formulario.metales.find((item) => item.id === m.id);
-                  const estaSeleccionado = !!elemento;
+              <div>
+                <label className="block font-semibold text-[#7B2710] mb-2">Metales</label>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {metales.map((m) => {
+                    const elemento = formulario.metales.find((item) => item.id === m.id);
+                    const estaSeleccionado = !!elemento;
 
-                  return (
-                    <label
-                      key={m.id}
-                      className={`flex items-center justify-between gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <input
-                          type="checkbox"
-                          className="accent-[#7B2710] w-5 h-5"
-                          checked={estaSeleccionado}
-                          onChange={(e) =>
-                            manejarListaConGramos("metales", m.id, e.target.checked, true)
-                          }
-                        />
-                        <span className="text-[#333] font-semibold">{m.nombre}</span>
-                      </div>
+                    return (
+                      <label
+                        key={m.id}
+                        className={`flex flex-col gap-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-3 w-full">
+                            <input
+                              type="checkbox"
+                              className="accent-[#7B2710] w-5 h-5"
+                              checked={estaSeleccionado}
+                              onChange={(e) =>
+                                manejarListaConGramos("metales", m.id, e.target.checked, true)
+                              }
+                            />
+                            <span className="text-[#333] font-semibold">{m.nombre}</span>
+                          </div>
 
-                      {estaSeleccionado && (
-                        <input
-                          type="number"
-                          placeholder="Gramos"
-                          min="1"
-                          max="1000"
-                          value={elemento.valor}
-                          onChange={(e) =>
-                            manejarListaConGramos("metales", m.id, parseFloat(e.target.value))
-                          }
-                          className="w-24 p-1 border rounded"
-                        />
-                      )}
-                    </label>
-                  );
-                })}
+                          {estaSeleccionado && (
+                            <input
+                              type="number"
+                              placeholder="Gramos"
+                              min="0.1"
+                              max="1000"
+                              step="0.1"
+                              value={elemento.valor}
+                              onChange={(e) => {
+                                let valor = e.target.value;
+
+                                // limitar a un solo decimal
+                                if (valor.includes('.')) {
+                                  const [entero, decimal] = valor.split('.');
+                                  if (decimal.length > 1) return; // no permitir más de un decimal
+                                }
+
+                                manejarListaConGramos("metales", m.id, parseFloat(valor));
+                              }}
+                              className="w-24 p-1 border rounded"
+                            />
+                          )}
+                        </div>
+
+                        {estaSeleccionado && (
+                          <p className="text-xs text-gray-500 mt-1 ml-8 text-right">Máximo 1000 gramos</p>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
+              {/* 💎 Piedras */}
+              <div>
+                <label className="block font-semibold text-[#7B2710] mb-2">Piedras</label>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {piedras.map((p) => {
+                    const elemento = formulario.piedras.find((item) => item.id === p.id);
+                    const estaSeleccionado = !!elemento;
 
-            {/* 💎 Piedras */}
-            <div>
-              <label className="block font-semibold text-[#7B2710] mb-2">Piedras</label>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {piedras.map((p) => {
-                  const elemento = formulario.piedras.find((item) => item.id === p.id);
-                  const estaSeleccionado = !!elemento;
+                    return (
+                      <label
+                        key={p.id}
+                        className={`flex flex-col gap-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-3 w-full">
+                            <input
+                              type="checkbox"
+                              className="accent-[#7B2710] w-5 h-5"
+                              checked={estaSeleccionado}
+                              onChange={(e) =>
+                                manejarListaConGramos("piedras", p.id, e.target.checked, true)
+                              }
+                            />
+                            <span className="text-[#333] font-semibold">{p.nombre}</span>
+                          </div>
 
-                  return (
-                    <label
-                      key={p.id}
-                      className={`flex items-center justify-between gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <input
-                          type="checkbox"
-                          className="accent-[#7B2710] w-5 h-5"
-                          checked={estaSeleccionado}
-                          onChange={(e) =>
-                            manejarListaConGramos("piedras", p.id, e.target.checked, true)
-                          }
-                        />
-                        <span className="text-[#333] font-semibold">{p.nombre}</span>
-                      </div>
+                          {estaSeleccionado && (
+                            <input
+                              type="number"
+                              placeholder="Gramos"
+                              min="0.1"
+                              max="1000"
+                              step="0.1"
+                              value={elemento.valor}
+                              onChange={(e) => {
+                                let valor = e.target.value;
+                                if (valor.includes('.')) {
+                                  const [entero, decimal] = valor.split('.');
+                                  if (decimal.length > 1) return;
+                                }
+                                manejarListaConGramos("piedras", p.id, parseFloat(valor));
+                              }}
+                              className="w-24 p-1 border rounded"
+                            />
+                          )}
+                        </div>
 
-                      {estaSeleccionado && (
-                        <input
-                          type="number"
-                          placeholder="Gramos"
-                          min="1"
-                          max="1000"
-                          value={elemento.valor}
-                          onChange={(e) =>
-                            manejarListaConGramos("piedras", p.id, parseFloat(e.target.value))
-                          }
-                          className="w-24 p-1 border rounded"
-                        />
-                      )}
-                    </label>
-                  );
-                })}
+                        {estaSeleccionado && (
+                          <p className="text-xs text-gray-500 mt-1 ml-8 text-right">Máximo 1000 gramos</p>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
+              {/* 🧵 Hilos */}
+              <div>
+                <label className="block font-semibold text-[#7B2710] mb-2">Hilos (metros)</label>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {hilos.map((h) => {
+                    const elemento = formulario.hilos.find((item) => item.id === h.id);
+                    const estaSeleccionado = !!elemento;
 
-            {/* 🧵 Hilos */}
-            <div>
-              <label className="block font-semibold text-[#7B2710] mb-2">Hilos (metros)</label>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {hilos.map((h) => {
-                  const elemento = formulario.hilos.find((item) => item.id === h.id);
-                  const estaSeleccionado = !!elemento;
+                    return (
+                      <label
+                        key={h.id}
+                        className={`flex flex-col gap-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-3 w-full">
+                            <input
+                              type="checkbox"
+                              className="accent-[#7B2710] w-5 h-5"
+                              checked={estaSeleccionado}
+                              onChange={(e) =>
+                                manejarListaConGramos("hilos", h.id, e.target.checked, true)
+                              }
+                            />
+                            <span className="text-[#333] font-semibold">{h.nombre}</span>
+                          </div>
 
-                  return (
-                    <label
-                      key={h.id}
-                      className={`flex items-center justify-between gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        estaSeleccionado ? "bg-[#EADDD7] border-[#7B2710]" : "bg-white border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <input
-                          type="checkbox"
-                          className="accent-[#7B2710] w-5 h-5"
-                          checked={estaSeleccionado}
-                          onChange={(e) =>
-                            manejarListaConGramos("hilos", h.id, e.target.checked, true)
-                          }
-                        />
-                        <span className="text-[#333] font-semibold">{h.nombre}</span>
-                      </div>
+                          {estaSeleccionado && (
+                            <input
+                              type="number"
+                              placeholder="Metros"
+                              min="0.1"
+                              max="1000"
+                              step="0.1"
+                              value={elemento.valor}
+                              onChange={(e) => {
+                                let valor = e.target.value;
+                                if (valor.includes('.')) {
+                                  const [entero, decimal] = valor.split('.');
+                                  if (decimal.length > 1) return;
+                                }
+                                manejarListaConGramos("hilos", h.id, parseFloat(valor));
+                              }}
+                              className="w-24 p-1 border rounded"
+                            />
+                          )}
+                        </div>
 
-                      {estaSeleccionado && (
-                        <input
-                          type="number"
-                          placeholder="Metros"
-                          min="1"
-                          max="1000"
-                          value={elemento.valor}
-                          onChange={(e) =>
-                            manejarListaConGramos("hilos", h.id, parseFloat(e.target.value))
-                          }
-                          className="w-24 p-1 border rounded"
-                        />
-                      )}
-                    </label>
-                  );
-                })}
+                        {estaSeleccionado && (
+                          <p className="text-xs text-gray-500 mt-1 ml-8 text-right">Máximo 1000 metros</p>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+
 
             <div>
               <label className="block font-semibold text-[#7B2710]">Tiempo de entrega (días)</label>
@@ -500,14 +538,17 @@ export default function PaginaBase() {
             <div>
               <label className="block font-semibold text-[#7B2710]">Precio mano de obra ($)</label>
               <input
-                type="number"
+                type="text"
                 name="precioManoObra"
                 value={formulario.precioManoObra}
                 onChange={(e) => {
                   const valor = e.target.value;
 
-                  // Permitir solo números enteros
-                  if (valor === '' || /^\d+$/.test(valor)) {
+                  // Permitir solo números con máximo 1 decimal y hasta 6 caracteres
+                  if (
+                    valor === '' ||
+                    (/^\d{0,4}(\.\d{0,1})?$/.test(valor) && valor.length <= 6)
+                  ) {
                     setFormulario({
                       ...formulario,
                       precioManoObra: valor
@@ -515,7 +556,7 @@ export default function PaginaBase() {
 
                     // Validación en tiempo real
                     if (valor !== '') {
-                      const numero = parseInt(valor);
+                      const numero = parseFloat(valor);
                       if (numero < 30) {
                         setErrores({ ...errores, precioManoObra: 'Mínimo $30' });
                       } else if (numero > 5000) {
@@ -533,7 +574,7 @@ export default function PaginaBase() {
                 className={`w-full p-2 rounded border ${
                   errores.precioManoObra ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="30-5000"
+                placeholder="Mínimo 30$ Máximo 5000$"
               />
               {errores.precioManoObra && (
                 <p className="text-red-500 text-sm mt-1">{errores.precioManoObra}</p>

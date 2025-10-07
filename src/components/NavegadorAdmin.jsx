@@ -54,6 +54,16 @@ export default function NavegadorAdmin() {
       "Reportes": "/Reportes",
       "Chat": "/Reportes/Chat",
     };
+
+   document.body.style.cursor = "wait";
+router.push(routes[submenuItem]);
+
+// 👇 Restaurar el cursor después de un pequeño retraso
+setTimeout(() => {
+  document.body.style.cursor = "default";
+}, 800);
+
+    
     router.push(routes[submenuItem]);
     setOpenMenu(null);
     setSubmenuHover(false);
@@ -141,7 +151,8 @@ export default function NavegadorAdmin() {
   };
 
   return (
-    <nav className="bg-[#F5F1F1] border-b-2 border-[#762114] px-4 py-3 shadow-md fixed top-0 left-0 w-full z-50">
+    <nav className="bg-[#F5F1F1] border-b-2 border-[#762114] px-4 py-3 shadow-md fixed top-0 left-0 w-full z-50"
+    onMouseLeave={() => setOpenMenu(null)} >
       <div className="flex justify-between items-center">
         <button
           className="text-[#762114] lg:hidden"

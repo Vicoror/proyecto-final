@@ -39,7 +39,8 @@ export default function EditarPP() {
       setFormEdicion(prev => ({ ...prev, nombreModelo: cleaned }));
     } else if (name === "PrecioManoObra") {
       // Validación para Precio mano de obra: 0 a 5000
-      const cleanValue = Math.min(5000, Math.max(0, parseFloat(value.replace(/[^\d.]/g, "") || " ")));
+      let cleanValue = Math.min(5000, Math.max(0, parseFloat(value.replace(/[^\d.]/g, "") || " ")));
+      if (!isNaN(cleanValue)) {cleanValue = parseFloat(cleanValue.toFixed(2));}
       setFormEdicion(prev => ({ ...prev, PrecioManoObra: cleanValue }));
     } else if (name === "tiempoEntrega") {
       // Validación para Tiempo de entrega: 0 a 30 días
@@ -493,17 +494,30 @@ export default function EditarPP() {
                           </div>
                           
                           {estaActivo && (
-                            <input
-                              type="number"
-                              min="0.1"
-                              max="1000"
-                              step="0.1"
-                              value={materialSeleccionado?.gramos || ''}
-                              onChange={(e) => manejarListaConGramos("metales", metal.id, parseFloat(e.target.value))}
-                              className="w-20 p-1 border rounded"
-                              placeholder="Gramos"
-                            />
-                          )}
+                          <input
+                            type="number"
+                            min="0.1"
+                            max="1000"
+                            step="0.01"
+                            value={materialSeleccionado?.gramos || ''}
+                            onChange={(e) => {
+                              let valor = e.target.value;
+
+                              // Limitar a 2 decimales
+                              if (valor.includes('.')) {
+                                const [entero, decimal] = valor.split('.');
+                                if (decimal.length > 2) {
+                                  valor = `${entero}.${decimal.slice(0, 2)}`;
+                                }
+                              }
+
+                              manejarListaConGramos("metales", metal.id, parseFloat(valor));
+                            }}
+                            className="w-20 p-1 border rounded"
+                            placeholder="Gramos"
+                          />
+                        )}
+
                         </div>
                         {estaActivo && (
                           <p className="text-xs text-gray-500 mt-1">Máximo 1000 gramos</p>
@@ -542,16 +556,24 @@ export default function EditarPP() {
 
                         {estaActivo && (
                           <div className="flex flex-col items-end">
-                            <input
-                              type="number"
-                              placeholder="Gramos"
-                              min="0.1"
-                              max="1000"
-                              step="0.1"
-                              value={valorActual}
-                              onChange={(e) => manejarListaConGramos("piedras", p.id, parseFloat(e.target.value))}
-                              className="w-24 p-1 border rounded"
-                            />
+                           <input
+                            type="number"
+                            placeholder="Gramos"
+                            min="0.1"
+                            max="1000"
+                            step="0.01"
+                            value={valorActual}
+                            onChange={(e) => {
+                              let valor = parseFloat(e.target.value);
+                              if (!isNaN(valor)) {
+                                valor = parseFloat(valor.toFixed(2));
+                              }
+
+                              manejarListaConGramos("piedras", p.id, valor);
+                            }}
+                            className="w-24 p-1 border rounded"
+                          />
+
                             <p className="text-xs text-gray-500">Máx. 1000g</p>
                           </div>
                         )}
@@ -589,14 +611,21 @@ export default function EditarPP() {
 
                         {estaActivo && (
                           <div className="flex flex-col items-end">
-                            <input
+                              <input
                               type="number"
                               placeholder="Metros"
                               min="0.1"
                               max="1000"
-                              step="0.1"
+                              step="0.01"
                               value={valorActual}
-                              onChange={(e) => manejarListaConGramos("hilos", h.id, parseFloat(e.target.value))}
+                              onChange={(e) => {
+                                let valor = parseFloat(e.target.value);
+                                if (!isNaN(valor)) {
+                                  valor = parseFloat(valor.toFixed(2));
+                                }
+
+                                manejarListaConGramos("hilos", h.id, valor);
+                              }}
                               className="w-24 p-1 border rounded"
                             />
                             <p className="text-xs text-gray-500">Máx. 1000m</p>
