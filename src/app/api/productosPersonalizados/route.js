@@ -121,12 +121,13 @@ if (imagenFile && imagenFile.filepath) {
 
   const [resultado] = await pool.query(
   `INSERT INTO productospersonalizados
-   (nombreModelo, categoria, ImagenPP, tiempoEntrega, Activar, PrecioManoObra)
-   VALUES (?, ?, ?, ?, ?, ?)`,
+   (nombreModelo, categoria, ImagenPP,descriptionPP,tiempoEntrega, Activar, PrecioManoObra)
+   VALUES (?, ?, ?, ?, ?, ?, ?)`,
   [
     fields.nombreModelo,
     fields.categoria,
     urlImagen || null,
+    fields.descriptionPP,
     parseInt(fields.tiempoEntrega) || 1,
     activarValue,
     parseFloat(fields.precioManoObra) || 0,

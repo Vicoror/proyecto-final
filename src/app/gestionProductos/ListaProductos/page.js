@@ -498,7 +498,7 @@ const ProductList = () => {
                                 Variable
                               </span>
                               {/* Tooltip al hacer hover */}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-[#7B2710] text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20">
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-200 text-[#7B2710] text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20">
                                 Clic para editar tallas
                               </div>
                             </div>

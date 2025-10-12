@@ -46,6 +46,7 @@ export default function PaginaBase() {
     precioManoObra: "",
     activar: true,
     imagen: null,
+    descriptionPP: "",
   });
 
   useEffect(() => {
@@ -171,6 +172,14 @@ export default function PaginaBase() {
       nuevosErrores.nombreModelo = "Solo letras y espacios (máx 100 caracteres)";
     }
 
+    // Validar descripción
+      if (!formulario.descriptionPP.trim()) {
+        nuevosErrores.descriptionPP = "La descripción es requerida";
+      } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.:;*,%'"()¡!¿?]{1,500}$/.test(formulario.descriptionPP)) {
+        nuevosErrores.descriptionPP = "Solo letras, números, espacios y puntuación permitida (máx. 500 caracteres)";
+      }
+
+
     // Validar categoría
     if (!formulario.categoria) {
       nuevosErrores.categoria = "Seleccione una categoría";
@@ -226,6 +235,7 @@ export default function PaginaBase() {
     formData.append("piedras", JSON.stringify(formulario.piedras));
     formData.append("hilos", JSON.stringify(formulario.hilos));
     formData.append("imagen", formulario.imagen);
+    formData.append("descriptionPP", formulario.descriptionPP);
 
     try {
       const res = await fetch("/api/productosPersonalizados", {
@@ -293,32 +303,72 @@ export default function PaginaBase() {
           <h2 className="text-2xl font-bold text-[#7B2710] mb-6">Agregar Productos Personalizados</h2>
 
           <form className="space-y-4">
-            <div>
-              <label className="block font-semibold text-[#7B2710]">Nombre del modelo</label>
-              <input
-                name="nombreModelo"
-                value={formulario.nombreModelo}
-                onChange={manejarCambio}
-                className="w-full p-2 rounded border"
-                placeholder="Ej. Pulsera Maya"
-                maxLength={100}
-              /> {errores.nombreModelo && <p className="text-red-500 text-sm mt-1">{errores.nombreModelo}</p>}
+          {/* Nombre del modelo */}
+          <div>
+            <label className="block font-semibold text-[#7B2710]">
+              Nombre del modelo
+            </label>
+            <input
+              name="nombreModelo"
+              value={formulario.nombreModelo}
+              onChange={manejarCambio}
+              className="w-full p-2 rounded border"
+              placeholder="Ej. Pulsera Maya"
+              maxLength={100}
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>{formulario.nombreModelo.length}/100 caracteres</span>
+            </div>
+            {errores.nombreModelo && (
+              <p className="text-red-500 text-sm mt-1">{errores.nombreModelo}</p>
+            )}
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className="block font-semibold text-[#7B2710]">Categoría</label>
+            <select
+              name="categoria"
+              value={formulario.categoria}
+              onChange={manejarCambio}
+              className="w-full p-2 rounded border"
+            >
+              <option value="">Seleccionar categoría</option>
+              {categorias.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Descripción del producto */}
+          <div>
+            <label className="block font-semibold text-[#7B2710]">
+              Descripción del producto
+            </label>
+            <textarea
+              name="descriptionPP"
+              value={formulario.descriptionPP}
+              onChange={manejarCambio}
+              className="w-full p-2 rounded border h-28 resize-y"
+              placeholder={`Ej. 
+          • Tamaño largo 20cm 
+          • Material: Plata 925 
+          • Incluye caja de regalo`}
+              maxLength={500}
+            ></textarea>
+
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>{formulario.descriptionPP.length}/500 caracteres</span>
             </div>
 
-            <div>
-              <label className="block font-semibold text-[#7B2710]">Categoría</label>
-              <select
-                name="categoria"
-                value={formulario.categoria}
-                onChange={manejarCambio}
-                className="w-full p-2 rounded border"
-              >
-                <option value="">Seleccionar categoría</option>
-                {categorias.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+            {errores.descriptionPP && (
+              <p className="text-red-500 text-sm mt-1">
+                {errores.descriptionPP}
+              </p>
+            )}
+          </div>
 
             {/* 🔩 Metales */}
               <div>

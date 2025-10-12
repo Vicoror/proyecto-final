@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/AuthContext";
 
 const menuItems = [
-  { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Stock"] },
+  { title: "Gestión de productos", submenu: ["Agregar productos", "Editar productos", "Acciones Rápidas"] },
   { title: "Publicidad", submenu: ["Editar Anuncios", "Editar Publicidad"] },
   { title: "Envios", submenu: ["Gestión de envios"] },
   { title: "Pedidos", submenu: ["Gestión de pedidos"] },
   { title: "Gestión de clientes", submenu: ["Gestión de clientes"] },
-  { title: "Reportes", submenu: ["Reportes", "Chat"] },
+  { title: "Reportes", submenu: ["Reportes", "Chat y Otros"] },
 ];
 
 export default function NavegadorAdmin() {
@@ -45,14 +45,14 @@ export default function NavegadorAdmin() {
     const routes = {
       "Agregar productos": "/gestionProductos/AgregarProducto",
       "Editar productos": "/gestionProductos/EditarProductos",
-      "Stock": "/gestionProductos/ListaProductos",
+      "Acciones Rápidas": "/gestionProductos/ListaProductos",
       "Editar Anuncios": "/Publicidad/EditarAnuncios",
       "Editar Publicidad": "/Publicidad/EditarPublicidad",
       "Gestión de envios": "/gestionEnvios",
       "Gestión de pedidos": "/GestionPedidos",
       "Gestión de clientes": "/gestionClientes/GestionClientes",
       "Reportes": "/Reportes",
-      "Chat": "/Reportes/Chat",
+      "Chat y Otros": "/Reportes/Chat",
     };
 
    document.body.style.cursor = "wait";

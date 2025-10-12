@@ -254,37 +254,40 @@ export default function PersonalizarJoyas() {
 {(categoriaSeleccionada && categoriaSeleccionada !== "null" && 
   (categoriaSeleccionada !== "Anillos" || (categoriaSeleccionada === "Anillos" && tallaSeleccionada))) && (
   
-  <div>
-    <h2 className="text-xl font-semibold text-[#7B2710] mb-3">
-      2. Escoge un modelo
-      {categoriaSeleccionada && categoriaSeleccionada !== "null" && (
-        <span className="text-sm font-normal text-gray-600 ml-2">
-          (Filtrado por: {categoriaSeleccionada})
-        </span>
-      )}
-    </h2>
+<div> 
+  <h2 className="text-xl font-semibold text-[#7B2710] mb-3">
+    2. Escoge un modelo
+    {categoriaSeleccionada && categoriaSeleccionada !== "null" && (
+      <span className="text-sm font-normal text-gray-600 ml-2">
+        (Filtrado por: {categoriaSeleccionada})
+      </span>
+    )}
+  </h2>
 
-    {modelosFiltrados.length > 0 ? (
-      // contenedor tipo carrusel horizontal
-      <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {modelosFiltrados.map(m => (
+  {modelosFiltrados.length > 0 ? (
+    <div
+      className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
+      {modelosFiltrados.map((m) => (
+        <div key={m.id_ProPer} className="relative flex items-center">
+          {/* 📦 Tarjeta del modelo */}
           <div
-            key={m.id_ProPer}
-            className={`relative snap-start flex-shrink-0 w-28 sm:w-32 md:w-40 border-2 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-110 ${
-              modeloSeleccionado?.id_ProPer === m.id_ProPer 
-                ? 'border-[#DC9C5C] shadow-lg' 
-                : 'border-gray-300 hover:border-[#DC9C5C]'
+            className={`snap-start flex-shrink-0 w-28 sm:w-32 md:w-40 border-2 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-110 ${
+              modeloSeleccionado?.id_ProPer === m.id_ProPer
+                ? "border-[#DC9C5C] shadow-lg"
+                : "border-gray-300 hover:border-[#DC9C5C]"
             }`}
             onClick={() => {
               setModeloSeleccionado(m);
               setIdModeloSeleccionado(m.id_ProPer);
             }}
           >
-            {/* contenedor de la imagen con altura fija para que no crezca */}
-            <div className="flex items-center justify-center h-26 sm:h-24 md:h-40  overflow-hidden rounded-t-xl bg-white p-2">
-              <img 
-                src={m.ImagenPP} 
-                alt={m.nombreModelo} 
+            {/* contenedor imagen */}
+            <div className="flex items-center justify-center h-26 sm:h-24 md:h-40 overflow-hidden rounded-t-xl bg-white p-2">
+              <img
+                src={m.ImagenPP}
+                alt={m.nombreModelo}
                 className="max-h-full max-w-full object-contain"
               />
             </div>
@@ -301,18 +304,29 @@ export default function PersonalizarJoyas() {
               )}
             </div>
           </div>
-        ))}
-      </div>
-    ) : (
-      <div className="text-center py-6 bg-yellow-50 rounded-lg border border-yellow-200">
-        <p className="text-yellow-700 font-medium">
-          No hay modelos disponibles
-          {categoriaSeleccionada && categoriaSeleccionada !== "null" && 
-            ` para la categoría "${categoriaSeleccionada}"`}
-        </p>
-      </div>
-    )}
-  </div>
+
+          {/* 📝 Descripción del modelo (fuera del recuadro, a la derecha) */}
+          {modeloSeleccionado?.id_ProPer === m.id_ProPer && m.descriptionPP && (
+            <div className="ml-4 w-48 sm:w-56 md:w-64 bg-white border border-gray-300 rounded-lg shadow-md p-2 text-xs sm:text-sm text-gray-700">
+              <p className="font-semibold text-[#7B2710] mb-1">Descripción:</p>
+              <p className="whitespace-pre-wrap break-words">{m.descriptionPP}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="text-center py-6 bg-yellow-50 rounded-lg border border-yellow-200">
+      <p className="text-yellow-700 font-medium">
+        No hay modelos disponibles
+        {categoriaSeleccionada &&
+          categoriaSeleccionada !== "null" &&
+          ` para la categoría "${categoriaSeleccionada}"`}
+      </p>
+    </div>
+  )}
+</div>
+
 )}
 
           {/* 3. Selecciona los materiales - Solo visible cuando hay modelo seleccionado */}

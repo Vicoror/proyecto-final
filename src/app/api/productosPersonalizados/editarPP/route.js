@@ -110,6 +110,7 @@ export async function GET(request) {
         `SELECT 
           id_ProPer, 
           nombreModelo, 
+          descriptionPP,
           categoria, 
           ImagenPP
          FROM productospersonalizados
@@ -124,7 +125,7 @@ export async function GET(request) {
 
     // Si no hay parámetros, devolver lista básica de productos
     const [productos] = await pool.query(
-      'SELECT id_ProPer, nombreModelo, categoria, ImagenPP FROM productospersonalizados'
+      'SELECT id_ProPer, nombreModelo, categoria, descriptionPP, ImagenPP FROM productospersonalizados'
     );
     return NextResponse.json(productos, { status: 200 });
 
@@ -182,7 +183,7 @@ export async function PUT(request) {
     }
 
     // Validación básica
-    if (!datos.id_ProPer || !datos.nombreModelo || !datos.categoria) {
+    if (!datos.id_ProPer || !datos.nombreModelo || !datos.descriptionPP || !datos.categoria) {
       return NextResponse.json(
         { success: false, message: 'Datos incompletos' },
         { status: 400 }
@@ -195,13 +196,14 @@ export async function PUT(request) {
     // 1. Actualizar producto base - Asegúrate que ImagenPP se actualice
     await connection.query(
       `UPDATE productospersonalizados 
-       SET nombreModelo = ?, categoria = ?, tiempoEntrega = ?, 
+       SET nombreModelo = ?, categoria = ?, tiempoEntrega = ?, descriptionPP = ?, 
            PrecioManoObra = ?, Activar = ?, ImagenPP = ?
        WHERE id_ProPer = ?`,
       [
         datos.nombreModelo,
         datos.categoria,
         datos.tiempoEntrega || 1,
+        datos.descriptionPP,
         datos.PrecioManoObra || 0,
         datos.Activar ? 1 : 0,
         datos.ImagenPP || null, // ✅ Aquí se actualiza la imagen

@@ -291,7 +291,8 @@ export default function EditarMateriales() {
           <h3 className="text-lg font-semibold text-[#7B2710] mb-2">
             {modoEdicion ? "Editar Material" : "Agregar Material"}
           </h3>
-          <div className="grid gap-6">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+
             <select
               name="tipo" 
               value={formulario.tipo} 

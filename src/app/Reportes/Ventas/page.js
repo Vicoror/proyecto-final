@@ -304,7 +304,8 @@ if (filtro === "año" && !mostrarTabla) {
               )}
             </div>
             
-            <div className="flex space-x-2 mt-4 md:mt-0">
+            <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 mt-4 md:mt-0 items-stretch sm:items-center w-full">
+
               <button
                 onClick={fetchData}
                 disabled={loading}

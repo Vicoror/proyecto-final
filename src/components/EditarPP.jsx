@@ -37,7 +37,11 @@ export default function EditarPP() {
       // Validación para Nombre del modelo: no caracteres especiales y longitud máxima
       const cleaned = value.replace(/[^\wñÑáéíóúÁÉÍÓÚ()% ]/g, "").slice(0, 100);
       setFormEdicion(prev => ({ ...prev, nombreModelo: cleaned }));
-    } else if (name === "PrecioManoObra") {
+    } else if (name === "descriptionPP") {
+      // Validación para Nombre del modelo: no caracteres especiales y longitud máxima
+      const cleaned = value.replace(/[^\wñÑáéíóúÁÉÍÓÚ():;*.,%¡!¿? \n]/g, "").slice(0, 500);
+    setFormEdicion(prev => ({ ...prev, descriptionPP: cleaned }));
+    }else if (name === "PrecioManoObra") {
       // Validación para Precio mano de obra: 0 a 5000
       let cleanValue = Math.min(5000, Math.max(0, parseFloat(value.replace(/[^\d.]/g, "") || " ")));
       if (!isNaN(cleanValue)) {cleanValue = parseFloat(cleanValue.toFixed(2));}
@@ -91,6 +95,10 @@ export default function EditarPP() {
         throw new Error("El nombre del modelo debe tener al menos 2 caracteres");
       }
 
+       if (!formEdicion.descriptionPP || formEdicion.descriptionPP.length < 15) {
+        throw new Error("La descripción debe tener al menos 15 caracteres");
+      }
+
       if (!formEdicion.categoria) {
         throw new Error("Debes seleccionar una categoría");
       }
@@ -110,6 +118,7 @@ export default function EditarPP() {
       const datosActualizacion = {
         id_ProPer: formEdicion.id_ProPer,
         nombreModelo: formEdicion.nombreModelo,
+        descriptionPP: formEdicion.descriptionPP,
         categoria: formEdicion.categoria,
         tiempoEntrega: formEdicion.tiempoEntrega,
         PrecioManoObra: formEdicion.PrecioManoObra,
@@ -282,6 +291,7 @@ export default function EditarPP() {
       setFormEdicion({
         id_ProPer: productoCompleto.id_ProPer,
         nombreModelo: productoCompleto.nombreModelo,
+        descriptionPP: productoCompleto.descriptionPP,
         categoria: productoCompleto.categoria,
         tiempoEntrega: productoCompleto.tiempoEntrega,
         PrecioManoObra: productoCompleto.PrecioManoObra,
@@ -469,6 +479,28 @@ export default function EditarPP() {
                   ))}
                 </select>
               </div>
+
+              {/* Descripción del producto */}
+          <div>
+            <label className="block font-semibold text-[#7B2710]">
+              Descripción del producto
+            </label>
+            <textarea
+              name="descriptionPP"
+              value={formEdicion.descriptionPP || ""}
+              onChange={handleInputChange}
+              className="w-full p-2 rounded border h-28 resize-y"
+              placeholder={`Ej. 
+          • Tamaño largo 20cm 
+          • Material: Plata 925 
+          • Incluye caja de regalo`}
+              maxLength={500}
+            ></textarea>
+
+          <p className="text-sm text-gray-500 mt-1">
+            {formEdicion.descriptionPP?.length || ""}/500 caracteres. No se permiten caracteres especiales.
+          </p>
+          </div>
 
               {/* 🔩 Metales */}
               <div className="mb-6">
