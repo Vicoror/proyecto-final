@@ -29,6 +29,7 @@ const VerCarrito = () => {
   const [mostrarTerminos, setMostrarTerminos] = useState(false);
   const [terminosTexto, setTerminosTexto] = useState("");
 
+
   // 2. Cálculos independientes
   const { subtotal, totalItems } = useMemo(() => ({
     subtotal: cartItems.reduce((t, item) => 

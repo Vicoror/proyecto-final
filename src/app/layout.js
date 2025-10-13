@@ -54,8 +54,9 @@ export default function RootLayout({ children }) {
               }}
             />
             <WhatsAppChatWidget />
-          </CartProvider>
-        </AuthProvider>
+            </CartProvider>
+          </AuthProvider>
+          
       </body>
     </html>
   );

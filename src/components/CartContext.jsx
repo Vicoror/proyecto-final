@@ -7,6 +7,7 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
 
+
   // 🔹 Agregar producto al carrito
   const addToCart = (producto) => {
     setCartItems((prev) => {
@@ -90,7 +91,10 @@ export const CartProvider = ({ children }) => {
   };
 
   // 🔹 Limpiar carrito
-  const clearCart = () => setCartItems([]);
+ const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem("cartItems"); // 🔥 limpia también el almacenamiento
+  };
 
   return (
     <CartContext.Provider

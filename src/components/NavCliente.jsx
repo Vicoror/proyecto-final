@@ -269,6 +269,7 @@ const ProductosComponent = () => {
         {/* Botones de categorías */}
         <div className="flex flex-col space-y-3 text-base font-medium">
           {categorias.map((categoria) => (
+            
             <button
               key={categoria}
               onClick={() => {
@@ -485,25 +486,60 @@ const ProductosComponent = () => {
           <div className="text-center py-10"><p className="text-[#8C9560]">Buscando productos...</p></div>
         ) : searchResults.length > 0 ? (
           <div className={`${windowWidth <= 768 ? 'flex overflow-x-auto space-x-4 pb-4' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10'}`}>
-            {searchResults.map((producto) => (
-              <div key={producto.id_productos} className={`${windowWidth <= 768 ? 'min-w-[160px]' : ''} relative bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform hover:scale-105`}>
-                <img
-                  src={producto.imagen || "/placeholder.jpg"}
-                  alt={producto.nombre}
-                  onClick={() => setVerProductoId(producto.id_productos)}
-                  className="w-full h-36 object-contain bg-gray-100 rounded-lg hover:scale-105 cursor-pointer transition-transform"
-                />
-                <div className="flex-grow flex flex-col justify-between mt-2">
-                  <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center line-clamp-2">
-                    {truncateText(producto.nombre, 18)}
-                  </h3>
-                  <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
-                    ${producto.precio}
-                  </p>
-                  <BotonAgregarCarrito producto={producto} /> 
-                </div>
-              </div>
-            ))}
+            {searchResults.map((producto) => {
+  // Preparar stock seleccionado si es anillo
+  const stockSeleccionado =
+    producto?.categoria === "Anillos"
+      ? producto.stockTallas?.[0] || { stock: producto.stock, id_stock: null, talla: "" }
+      : null;
+
+  // Preparar objeto para el carrito
+  const productoCarrito = {
+    id: producto.id_productos,
+    name: producto.nombre,
+    price: producto.precio,
+    description: producto.descripcion,
+    image: producto.imagen,
+    image2: producto.imagen2,
+    image3: producto.imagen3,
+    categoria: producto.categoria,
+    talla: stockSeleccionado?.talla,
+    stock:
+      producto.categoria === "Anillos"
+        ? stockSeleccionado.stock
+        : producto.stock,
+    id_stock: stockSeleccionado?.id_stock || null,
+    uniqueId:
+      producto.categoria === "Anillos"
+        ? `${producto.id_productos}-${stockSeleccionado?.id_stock || 0}-${stockSeleccionado?.talla || ""}`
+        : String(producto.id_productos),
+  };
+
+  return (
+    <div
+      key={producto.id_productos}
+      className={`${
+        windowWidth <= 768 ? "min-w-[160px]" : ""
+      } relative bg-white p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-between transform transition-transform hover:scale-105`}
+    >
+      <img
+        src={producto.imagen || "/placeholder.jpg"}
+        alt={producto.nombre}
+        onClick={() => setVerProductoId(producto.id_productos)}
+        className="w-full h-36 object-contain bg-gray-100 rounded-lg hover:scale-105 cursor-pointer transition-transform"
+      />
+      <div className="flex-grow flex flex-col justify-between mt-2">
+        <h3 className="text-xs sm:text-sm md:text-base font-semibold text-center line-clamp-2">
+          {truncateText(producto.nombre, 18)}
+        </h3>
+        <p className="text-[#DC9C5C] font-bold text-center text-sm sm:text-base mt-1">
+          ${producto.precio}
+        </p>
+        <BotonAgregarCarrito producto={productoCarrito} />
+      </div>
+    </div>
+  );
+})}
           </div>
         ) : null  
          }
