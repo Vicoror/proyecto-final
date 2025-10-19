@@ -223,6 +223,7 @@ export default function GestionPedidos() {
                         <td className="px-4 py-3 flex space-x-2">
                           <button 
                             onClick={() => verPedido(pedido.id)}
+                            title="Ver pedidos"
                             className="p-2 bg-[#8C9560] text-white rounded-lg hover:bg-[#7B2710] transition-colors"
                           >
                             <Eye size={16} />
@@ -232,6 +233,7 @@ export default function GestionPedidos() {
                               setCambiandoEstado(pedido);
                               setNuevoEstado(pedido.estado);
                             }}
+                            title="Cambiar estado de pedido"
                             className="p-2 bg-[#DC9C5C] text-white rounded-lg hover:bg-[#7B2710] transition-colors"
                           >
                             <Edit size={16} />
