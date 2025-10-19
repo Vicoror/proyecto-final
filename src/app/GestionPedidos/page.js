@@ -223,7 +223,7 @@ export default function GestionPedidos() {
                         <td className="px-4 py-3 flex space-x-2">
                           <button 
                             onClick={() => verPedido(pedido.id)}
-                            title="Ver pedidos"
+                            title="Detalles del pedido"
                             className="p-2 bg-[#8C9560] text-white rounded-lg hover:bg-[#7B2710] transition-colors"
                           >
                             <Eye size={16} />
