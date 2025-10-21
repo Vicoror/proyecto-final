@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import BotonAgregarCarrito from "@/components/BotonAgregarCarrito";
 import IconoCarrito from "@/components/IconoCarrito";
+import NavCliente from "@/components/NavCliente";
 
 export default function PersonalizarJoyas() {
   const router = useRouter();
@@ -117,6 +118,8 @@ export default function PersonalizarJoyas() {
     : modelos;
 
   return (
+     <>
+    <NavCliente />
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative"
       style={{ backgroundImage: "url('/fondo.png')" }}
@@ -124,31 +127,6 @@ export default function PersonalizarJoyas() {
       <div className="absolute inset-0 bg-white opacity-70"></div>
 
       <div className="relative z-10">
-        <header className="flex justify-between items-center mb-8">
-          <Link href="/" className="flex items-center">
-            <h1
-              className="text-3xl md:text-4xl font-bold text-[#7B2710]"
-              style={{ fontFamily: "Alex Brush" }}
-            >
-              Bernarda Sierra
-            </h1>
-            <FiHome className="ml-2 text-[#7B2710] text-2xl" />
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <Link href="/login" className="text-[#7B2710] hover:text-[#DC9C5C] flex items-center">
-                <FiUser className="text-2xl" />
-              </Link>
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#DC9C5C] text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                Iniciar sesión
-              </div>
-            </div>
-            <div className="flex items-center text-[#7B2710] hover:text-[#DC9C5C]">
-              <IconoCarrito />
-            </div>
-          </div>
-        </header>
 
         <div className="bg-[#F5F1F1] p-6 rounded-2xl shadow-xl space-y-6 border-4 border-[#7B2710]">
         {/* 1. Selecciona una categoría - DROPDOWN CORREGIDO */}
@@ -464,7 +442,9 @@ export default function PersonalizarJoyas() {
             Si no encuentras lo que buscas, contáctanos por WhatsApp y cotizamos el modelo que necesitas.
           </p>
         </div>
+        
       </div>
     </div>
+     </>
   );
 }
